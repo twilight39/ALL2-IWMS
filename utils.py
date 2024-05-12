@@ -1,6 +1,20 @@
 import ttkbootstrap as ttk
+import tkinter
 from ttkbootstrap.validation import validator, add_validation
 import re
+
+class fonts:
+    def __init__(self):
+        self.fonts = {
+            "header1": tkinter.font.Font(family="Zilla Slab", size=50, weight="bold"),
+            "header2": tkinter.font.Font(family="Zilla Slab", size=45, weight="bold"),
+            "header3": tkinter.font.Font(family="Noto Sans", size=35, weight="bold"),
+            "regular": tkinter.font.Font(family="Noto Sans", size=18, weight="normal"),
+            "error": tkinter.font.Font(family="Lexend", size=11, slant="italic")
+        }
+
+    def get_font(self, style):
+        return self.fonts.get(style.lower(), None)
 
 # Implements Preview Text for Entry Widgets
 class previewText:

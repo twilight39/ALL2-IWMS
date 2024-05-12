@@ -1,7 +1,7 @@
 import tkinter
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image
-from utils import previewText, validation
+from utils import previewText, validation, fonts
 
 class Login(tkinter.Canvas):
 
@@ -11,8 +11,11 @@ class Login(tkinter.Canvas):
 
         # Application Images
         self.images =[
-            Image.open('Graphics/loginBG.png').resize((1280, 720))
+            Image.open('Graphics/loginBG.png').resize((1280, 720)),
+            Image.open('Graphics/passwordInvisible.png').resize(((24, 24))),
+            Image.open('Graphics/passwordVisible.png').resize((32,32))
         ]
+
 
         self.imageObject = []
         for im in self.images:
@@ -29,8 +32,9 @@ class Login(tkinter.Canvas):
         # Style Object Reference
         self.styleObj = master.style
 
-        # Validation Object
+        # Validation & Fonts Object
         self.validationObj = validation()
+        self.Fonts = fonts()
 
         # Inherit Frame Class
         super().__init__(master)
@@ -45,20 +49,20 @@ class Login(tkinter.Canvas):
         # self.bind('<Configure>', lambda event, imageNo=0: self.on_resize(event, imageNo))
 
         # Text Labels
-        self.create_text(40, 100, text="KEAI", font=("Noto Sans", 55, "bold"), fill="black", anchor=tkinter.W)
-        self.create_text(40, 160, text="Warehouse and Inventory Management System", font=("Noto Sans", 45, "bold"), fill="black", anchor=tkinter.W)
-        emailText = self.create_text(255, 330, text="Email", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
-        passwordText = self.create_text(255, 400, text="Password", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
+        self.create_text(40, 100, text="KEAI", font=self.Fonts.get_font("header1"), fill="black", anchor=tkinter.W)
+        #self.create_text(40, 100, text="KEAI", font=("Noto Sans", 55, "bold"), fill="black", anchor=tkinter.W)
+        self.create_text(40, 160, text="Warehouse and Inventory Management System", font=self.Fonts.get_font("header2"), fill="black", anchor=tkinter.W)
+        emailText = self.create_text(270, 330, text="Email", font=self.Fonts.get_font("header3"), fill="black", anchor=tkinter.E)
+        passwordText = self.create_text(270, 400, text="Password", font=self.Fonts.get_font("header3"), fill="black", anchor=tkinter.E)
 
         # Login Button
-        fnt = tkinter.font.Font(family='Noto Sans', name='appButtonFont', size=38, weight='bold')
-        self.styleObj.configure(style="warning.TButton", font = fnt, foreground="black")
+        self.styleObj.configure(style="warning.TButton", font = self.Fonts.get_font("header3"), foreground="black")
         loginButton = ttk.Button(self, text="Login", style="warning")
 
         # Debugging Button aaaAaaaAaaaAaaa
         # print(master.style)
         # print(master.style.theme_names())
-        print(loginButton['style'])
+        # print(loginButton['style'])
         # print(loginButton.winfo_class())
         # print(master.style.theme.colors.get("danger"))
 
@@ -67,8 +71,10 @@ class Login(tkinter.Canvas):
         greyColor = self.styleObj.theme.colors.get("secondary")
         errColor = self.styleObj.theme.colors.get("danger")
 
-        emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=('Noto Sans', 18),foreground=greyColor, bootstyle="dark")
-        passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=('Noto Sans', 18), foreground=greyColor, show ="*", bootstyle="dark")
+        emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=self.Fonts.get_font("regular"),foreground=greyColor, bootstyle="dark")
+        passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=self.Fonts.get_font("regular"), foreground=greyColor, show ="*", bootstyle="dark")
+        passwordButton = ttk.Button(self, image=self.imageObject[1], bootstyle="light", padding=0)
+        passwordButton.configure(command=lambda: self.passwordVisible(passwordButton, passwordEntry))
 
         # Preview Text
         previewText(emailEntry, "emailEntry", self.styleObj)
@@ -76,11 +82,12 @@ class Login(tkinter.Canvas):
 
         # Add Widgets to Canvas
         emailEntryID = self.create_window(290, 307, window=emailEntry, width= 350, height=46, anchor=tkinter.NW)
-        emailErrorID = self.create_text(290, 353, font=errFont, fill=errColor, anchor=tkinter.NW)
+        emailErrorID = self.create_text(290, 353, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW)
         passwordEntryID = self.create_window(290, 377, window=passwordEntry, width=350, height=46, anchor=tkinter.NW)
-        passwordErrorID = self.create_text(290, 423, font=errFont, fill=errColor, anchor=tkinter.NW)
+        passwordErrorID = self.create_text(290, 423, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW)
+        passwordButtonID = self.create_window(596, 379, window=passwordButton, width =42, height=42, anchor=tkinter.NW)
         loginButtonID = self.create_window(360, 500, window=loginButton)
-        buttonErrorID = self.create_text(360, 530, font=errFont, fill=errColor, anchor=tkinter.N)#, text="Invalid Email or Password")
+        buttonErrorID = self.create_text(360, 530, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.N)
 
         # Visual Validation
         self.VisualValidation(emailEntry, "email", self.textVariables["emailError"], emailErrorID)
@@ -116,6 +123,15 @@ class Login(tkinter.Canvas):
 
         else:
             self.itemconfigure(buttonErrorID, text="Invalid Email or Password")
+
+    def passwordVisible(self, button, entry):
+        button.configure(image=self.imageObject[2], command=lambda: self.passwordInvisible(button, entry))
+        entry.configure(show="")
+
+    def passwordInvisible(self, button, entry):
+        button.configure(image=self.imageObject[1], command=lambda: self.passwordVisible(button, entry))
+        entry.configure(show="*")
+
 
 
 # Test case
