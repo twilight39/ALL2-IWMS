@@ -1,11 +1,14 @@
 import tkinter
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image
-from utils import previewText
+from utils import previewText, validation
 
-class Login(ttk.Frame):
+class Login(tkinter.Canvas):
 
     def __init__(self, master):
+
+        self.master = master
+
         # Application Images
         self.images =[
             Image.open('Graphics/loginBG.png').resize((1280, 720))
@@ -20,45 +23,32 @@ class Login(ttk.Frame):
             "email" : tkinter.StringVar(),
             "emailError" : tkinter.StringVar(),
             "password" : tkinter.StringVar(),
-            "passwordError" : tkinter.StringVar()
+            "passwordError" : tkinter.StringVar(),
         }
 
         # Style Object Reference
         self.styleObj = master.style
 
+        # Validation Object
+        self.validationObj = validation()
+
         # Inherit Frame Class
         super().__init__(master)
 
-        # Grid Master Window
-        master.rowconfigure(0, weight=1)
-        master.columnconfigure(0, weight=1)
-
-        # Grid Self Frame
-        self.grid(column=0, row=0, sticky="nwes")
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
+        # Pack Canvas
+        self.pack(fill="both", expand=True)
 
         # Background Image
-        canvas = tkinter.Canvas(self)
-        canvas.grid(row=0, column=0, sticky="nwes")
-        canvas.create_image(0, 0, anchor="nw", image=self.imageObject[0])
+        self.create_image(0, 0, anchor="nw", image=self.imageObject[0])
 
         # Binding to resize image, currently window not resizable
-        # canvas.bind('<Configure>', lambda event, imageNo=0: self.on_resize(event, imageNo))
-
-        '''
-        # Create frame over canvas
-        frame = ttk.Frame(self)
-        canvas.create_window(0, 0, window=frame)
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(0, weight=1)
-        '''
+        # self.bind('<Configure>', lambda event, imageNo=0: self.on_resize(event, imageNo))
 
         # Text Labels
-        canvas.create_text(40, 100, text="KEAI", font=("Noto Sans", 55, "bold"), fill="black", anchor=tkinter.W)
-        canvas.create_text(40, 160, text="Warehouse and Inventory Management System", font=("Noto Sans", 45, "bold"), fill="black", anchor=tkinter.W)
-        emailText = canvas.create_text(255, 330, text="Email", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
-        passwordText = canvas.create_text(255, 390, text="Password", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
+        self.create_text(40, 100, text="KEAI", font=("Noto Sans", 55, "bold"), fill="black", anchor=tkinter.W)
+        self.create_text(40, 160, text="Warehouse and Inventory Management System", font=("Noto Sans", 45, "bold"), fill="black", anchor=tkinter.W)
+        emailText = self.create_text(255, 330, text="Email", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
+        passwordText = self.create_text(255, 400, text="Password", font=("Noto Sans", 38, "bold"), fill="black", anchor=tkinter.E)
 
         # Login Button
         fnt = tkinter.font.Font(family='Noto Sans', name='appButtonFont', size=38, weight='bold')
@@ -69,7 +59,7 @@ class Login(ttk.Frame):
         # print(master.style)
         # print(master.style.theme_names())
         print(loginButton['style'])
-        print(loginButton.winfo_class())
+        # print(loginButton.winfo_class())
         # print(master.style.theme.colors.get("danger"))
 
         # Email & Password Widgets
@@ -77,50 +67,62 @@ class Login(ttk.Frame):
         greyColor = self.styleObj.theme.colors.get("secondary")
         errColor = self.styleObj.theme.colors.get("danger")
 
-        emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=('Noto Sans', 18),foreground=greyColor)
-        emailError = ttk.Label(self, textvariable=self.textVariables["emailError"], font=errFont, foreground=errColor)
-        passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=('Noto Sans', 18), foreground=greyColor, show ="*")
-        passwordError = ttk.Label(self, textvariable=self.textVariables["passwordError"], font=errFont, foreground=errColor)
+        emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=('Noto Sans', 18),foreground=greyColor, bootstyle="dark")
+        passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=('Noto Sans', 18), foreground=greyColor, show ="*", bootstyle="dark")
 
         # Preview Text
         previewText(emailEntry, "emailEntry", self.styleObj)
         previewText(passwordEntry, "passwordEntry", self.styleObj)
 
         # Add Widgets to Canvas
-        emailEntryID = canvas.create_window(290, 307, window=emailEntry, width= 350, height=46, anchor=tkinter.NW)
-        passwordEntryID = canvas.create_window(290, 367, window=passwordEntry, width=350, height=46, anchor=tkinter.NW)
-        canvas.create_window(360, 500, window=loginButton)
+        emailEntryID = self.create_window(290, 307, window=emailEntry, width= 350, height=46, anchor=tkinter.NW)
+        emailErrorID = self.create_text(290, 353, font=errFont, fill=errColor, anchor=tkinter.NW)
+        passwordEntryID = self.create_window(290, 377, window=passwordEntry, width=350, height=46, anchor=tkinter.NW)
+        passwordErrorID = self.create_text(290, 423, font=errFont, fill=errColor, anchor=tkinter.NW)
+        loginButtonID = self.create_window(360, 500, window=loginButton)
+        buttonErrorID = self.create_text(360, 530, font=errFont, fill=errColor, anchor=tkinter.N)#, text="Invalid Email or Password")
+
+        # Visual Validation
+        self.VisualValidation(emailEntry, "email", self.textVariables["emailError"], emailErrorID)
+        self.VisualValidation(passwordEntry, "password", self.textVariables["passwordError"], passwordErrorID)
 
         # Debugging
-        print("Email Label (x1, y1, x2, y2): " + str(canvas.bbox(emailText)))
-        print("Email Entry (x1, y1, x2, y2): " + str(canvas.bbox(emailEntryID)))
-        print("Password Label (x1, y1, x2, y2): " + str(canvas.bbox(passwordText)))
-        print("Password Entry (x1, y1, x2, y2): " + str(canvas.bbox(passwordEntryID)))
+        print("Email Label (x1, y1, x2, y2): " + str(self.bbox(emailText)))
+        print("Email Entry (x1, y1, x2, y2): " + str(self.bbox(emailEntryID)))
+        print("Password Label (x1, y1, x2, y2): " + str(self.bbox(passwordText)))
+        print("Password Entry (x1, y1, x2, y2): " + str(self.bbox(passwordEntryID)))
+        print("Login Button (x1, y1, x2, y2): " + str(self.bbox(loginButtonID)))
 
-    """
-    # Resize Images to Window Size, Currently Window not resizable
-    def on_resize(self, event, imageNo):
 
-        # Get current window size
-        window_width = self.winfo_width()
-        window_height = self.winfo_height()
+        # Validate Login Button
+        loginButton.bind("<ButtonPress-1>", lambda event, x=buttonErrorID:self.ValidateButton(event, x))
 
-        # Update image size
-        resizedImage = self.images[imageNo].resize((window_width, window_height))
-        self.imageObject[imageNo] = ImageTk.PhotoImage(resizedImage)
-        # event.widget.configure(image=self.imageObject[imageNo])
-        event.widget.create_image(0, 0, anchor="nw", image = self.imageObject[imageNo])
+        # Bind Enter Key
+        # Email Entry -> Password Entry -> Login Button
 
-        # Debugging
-        # print("WindowL: W" + str(window_width) + " H" + str(window_height))
-        # print("Widget: W" + str(event.widget.winfo_width()) + " H" +str(event.widget.winfo_height()))
-    """
+    # Validates a widget and updates its error message
+    def VisualValidation(self, widget, key, errStringVar, errID):
+        self.validationObj.validate(widget, key, errStringVar)
+        widget.bind("<FocusOut>", lambda event: self.itemconfigure(errID, text=errStringVar.get()), add="+")
+
+    # Temporary Check if Login succeeds; Replace once database is implemented!!!
+    def ValidateButton(self, event, buttonErrorID):
+        if (self.textVariables["email"].get() != "abc@companyKEAI.com" and
+            self.textVariables["emailError"].get() == "" and
+            self.textVariables["password"].get() != "abcd1234!" and
+            self.textVariables["passwordError"].get() == ""
+        ):
+            self.itemconfigure(buttonErrorID, text="")
+
+        else:
+            self.itemconfigure(buttonErrorID, text="Invalid Email or Password")
+
 
 # Test case
 
 if __name__ == "__main__":
     # Create Main Window, and center it
-    window = ttk.Window(title="Keai IWMS", themename="journal", size=(1280, 720), resizable=[False,False])
+    window = ttk.Window(title="Keai IWMS", themename="cosmo", size=(1280, 720), resizable=[False,False])
     ttk.window.Window.place_window_center(window)
 
     # Creates Login Object
