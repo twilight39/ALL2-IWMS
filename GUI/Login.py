@@ -8,6 +8,8 @@ class Login(tkinter.Canvas):
     def __init__(self, master):
 
         self.master = master
+        self.state = True
+        self.prevWindowDimensions =(1280, 720)
 
         # Application Images
         self.images =[
@@ -15,7 +17,6 @@ class Login(tkinter.Canvas):
             Image.open('Graphics/passwordInvisible.png').resize(((24, 24))),
             Image.open('Graphics/passwordVisible.png').resize((32,32))
         ]
-
 
         self.imageObject = []
         for im in self.images:
@@ -32,80 +33,106 @@ class Login(tkinter.Canvas):
         # Style Object Reference
         self.styleObj = master.style
 
-        # Validation & Fonts Object
+        # Validation & Fonts Object & Colors
         self.validationObj = validation()
         self.Fonts = fonts()
-
-        # Inherit Frame Class
-        super().__init__(master)
-
-        # Pack Canvas
-        self.pack(fill="both", expand=True)
-
-        # Background Image
-        self.create_image(0, 0, anchor="nw", image=self.imageObject[0])
-
-        # Binding to resize image, currently window not resizable
-        # self.bind('<Configure>', lambda event, imageNo=0: self.on_resize(event, imageNo))
-
-        # Text Labels
-        self.create_text(40, 100, text="KEAI", font=self.Fonts.get_font("header1"), fill="black", anchor=tkinter.W)
-        #self.create_text(40, 100, text="KEAI", font=("Noto Sans", 55, "bold"), fill="black", anchor=tkinter.W)
-        self.create_text(40, 160, text="Warehouse and Inventory Management System", font=self.Fonts.get_font("header2"), fill="black", anchor=tkinter.W)
-        emailText = self.create_text(270, 330, text="Email", font=self.Fonts.get_font("header3"), fill="black", anchor=tkinter.E)
-        passwordText = self.create_text(270, 400, text="Password", font=self.Fonts.get_font("header3"), fill="black", anchor=tkinter.E)
-
-        # Login Button
-        self.styleObj.configure(style="warning.TButton", font = self.Fonts.get_font("header3"), foreground="black")
-        loginButton = ttk.Button(self, text="Login", style="warning")
-
-        # Debugging Button aaaAaaaAaaaAaaa
-        # print(master.style)
-        # print(master.style.theme_names())
-        # print(loginButton['style'])
-        # print(loginButton.winfo_class())
-        # print(master.style.theme.colors.get("danger"))
-
-        # Email & Password Widgets
-        errFont = tkinter.font.Font(family="Lexend", name="appErrorTextFont", size=11, slant="italic")
         greyColor = self.styleObj.theme.colors.get("secondary")
         errColor = self.styleObj.theme.colors.get("danger")
 
+        # Inherit Frame Class
+        super().__init__(master)
+        self.pack(fill="both", expand=True)
+
+        # Email & Password Widgets
         emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=self.Fonts.get_font("regular"),foreground=greyColor, bootstyle="dark")
         passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=self.Fonts.get_font("regular"), foreground=greyColor, show ="*", bootstyle="dark")
         passwordButton = ttk.Button(self, image=self.imageObject[1], bootstyle="light", padding=0)
         passwordButton.configure(command=lambda: self.passwordVisible(passwordButton, passwordEntry))
 
+        # Login Button Widget
+        self.styleObj.configure(style="warning.TButton", font=self.Fonts.get_font("header3"), foreground="black")
+        loginButton = ttk.Button(self, text="Login", style="warning")
+
+        # Bind Enter Key (Email Entry -> Password Entry -> Login Button)
+        emailEntry.bind("<Return>", lambda event: passwordEntry.focus())
+        passwordEntry.bind("<Return>", lambda event: loginButton.focus())
+
         # Preview Text
         previewText(emailEntry, "emailEntry", self.styleObj)
         previewText(passwordEntry, "passwordEntry", self.styleObj)
 
-        # Add Widgets to Canvas
-        emailEntryID = self.create_window(290, 307, window=emailEntry, width= 350, height=46, anchor=tkinter.NW)
-        emailErrorID = self.create_text(290, 353, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW)
-        passwordEntryID = self.create_window(290, 377, window=passwordEntry, width=350, height=46, anchor=tkinter.NW)
-        passwordErrorID = self.create_text(290, 423, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW)
-        passwordButtonID = self.create_window(596, 379, window=passwordButton, width =42, height=42, anchor=tkinter.NW)
-        loginButtonID = self.create_window(360, 500, window=loginButton)
-        buttonErrorID = self.create_text(360, 530, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.N)
+        # Display Canvas Objects
+        self.canvasObjIDs = {
+            "backgroundImageID": self.create_image(0, 0, anchor="nw", image=self.imageObject[0]),
+            "KEAI": self.create_text(40, 100, text="KEAI", font=self.Fonts.get_font("header1"), fill="black",
+                                     anchor=tkinter.W),
+            "IWMS": self.create_text(40, 160, text="Warehouse and Inventory Management System",
+                                     font=self.Fonts.get_font("header2"), fill="black", anchor=tkinter.W),
+            "emailLabelID": self.create_text(270, 330, text="Email", font=self.Fonts.get_font("header3"), fill="black",
+                                          anchor=tkinter.E),
+            "emailEntryID" : self.create_window(290, 307, window=emailEntry, width=350, height=46, anchor=tkinter.NW),
+            "emailErrorID" : self.create_text(290, 353, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW),
+            "passwordLabelID": self.create_text(270, 400, text="Password", font=self.Fonts.get_font("header3"), fill="black", anchor=tkinter.E),
+            "passwordEntryID" : self.create_window(290, 400, window=passwordEntry, width=350, height=46, anchor=tkinter.NW),
+            "passwordButtonID" : self.create_window(638, 421, window=passwordButton, width=42, height=42, anchor=tkinter.NE),
+            "passwordErrorID" : self.create_text(290, 423, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.NW),
+            "loginButtonID" : self.create_window(360, 500, window=loginButton),
+            "buttonErrorID" : self.create_text(360, 530, font=self.Fonts.get_font("error"), fill=errColor, anchor=tkinter.N)
+        }
+        for i in [2,3,4,6,7,10,11,12]:
+            self.addtag_withtag("scalable", i)
 
         # Visual Validation
-        self.VisualValidation(emailEntry, "email", self.textVariables["emailError"], emailErrorID)
-        self.VisualValidation(passwordEntry, "password", self.textVariables["passwordError"], passwordErrorID)
+        self.VisualValidation(emailEntry, "email", self.textVariables["emailError"], self.canvasObjIDs["emailErrorID"])
+        self.VisualValidation(passwordEntry, "password", self.textVariables["passwordError"], self.canvasObjIDs["passwordErrorID"])
+        loginButton.bind("<ButtonPress-1>", lambda event, x=self.canvasObjIDs["buttonErrorID"]: self.ValidateButton(event, x))
+
+        # Resize canvas with window
+        self.bind("<Configure>", lambda event, x=passwordButton: self.DisplayCanvasObjects(event, x))
+
+    def DisplayCanvasObjects(self, event, passwordButton):
+
+        # Get new window size
+        window_width = self.master.winfo_width()
+        window_height = self.master.winfo_height()
+
+        # Resize images
+        self.resizeImages((window_width,window_height))
+
+        # Redisplay Canvas Objects
+        self.itemconfig(self.canvasObjIDs["backgroundImageID"], image=self.imageObject[0])
+        self.scale("scalable", 0, 0, window_width/self.prevWindowDimensions[0], window_height/self.prevWindowDimensions[1])
+        #self.itemconfig(self.canvasObjIDs["emailEntryID"], x=window_width/4.414, y=window_height/2.345)
+
+        emailLabelDimensions = self.bbox(self.canvasObjIDs["emailLabelID"])
+        passwordLabelDimensions = self.bbox(self.canvasObjIDs["passwordLabelID"])
+        passwordButtonDimensions = self.bbox(self.canvasObjIDs["passwordLabelID"])[3] - self.bbox(self.canvasObjIDs["passwordLabelID"])[1] -4
+
+        self.coords(self.canvasObjIDs["emailEntryID"], window_width/4.414, emailLabelDimensions[1])
+        self.itemconfig(self.canvasObjIDs["emailEntryID"], width=window_width/2 - window_width/4.414, height=emailLabelDimensions[3]-emailLabelDimensions[1])
+        self.coords(self.canvasObjIDs["passwordEntryID"], window_width/4.414, passwordLabelDimensions[1])
+        self.itemconfig(self.canvasObjIDs["passwordEntryID"], width=window_width/2 - window_width/4.414, height=passwordLabelDimensions[3]-passwordLabelDimensions[1])
+
+        self.coords(self.canvasObjIDs["passwordButtonID"], window_width/2 - 2, passwordLabelDimensions[1] + 2)
+        self.itemconfig(self.canvasObjIDs["passwordButtonID"], width=passwordButtonDimensions, height=passwordButtonDimensions)
+
+        if self.state == True:
+            passwordButton.configure(image=self.imageObject[1])
+        else:
+            passwordButton.configure(image=self.imageObject[2])
+
+        # Save current window size
+        self.prevWindowDimensions = (window_width, window_height)
 
         # Debugging
-        print("Email Label (x1, y1, x2, y2): " + str(self.bbox(emailText)))
-        print("Email Entry (x1, y1, x2, y2): " + str(self.bbox(emailEntryID)))
-        print("Password Label (x1, y1, x2, y2): " + str(self.bbox(passwordText)))
-        print("Password Entry (x1, y1, x2, y2): " + str(self.bbox(passwordEntryID)))
-        print("Login Button (x1, y1, x2, y2): " + str(self.bbox(loginButtonID)))
+        print("Email Label (x1, y1, x2, y2): " + str(self.bbox(4)))
+        print("Email Entry (x1, y1, x2, y2): " + str(self.bbox(5)))
+        print("Password Label (x1, y1, x2, y2): " + str(self.bbox(7)))
+        print("Password Entry (x1, y1, x2, y2): " + str(self.bbox(8)))
+        print("Password Button (x1, y1, x2, y2): " + str(self.bbox(9)))
+        print("\n")
 
 
-        # Validate Login Button
-        loginButton.bind("<ButtonPress-1>", lambda event, x=buttonErrorID:self.ValidateButton(event, x))
-
-        # Bind Enter Key
-        # Email Entry -> Password Entry -> Login Button
 
     # Validates a widget and updates its error message
     def VisualValidation(self, widget, key, errStringVar, errID):
@@ -127,18 +154,32 @@ class Login(tkinter.Canvas):
     def passwordVisible(self, button, entry):
         button.configure(image=self.imageObject[2], command=lambda: self.passwordInvisible(button, entry))
         entry.configure(show="")
+        self.state = False
 
     def passwordInvisible(self, button, entry):
         button.configure(image=self.imageObject[1], command=lambda: self.passwordVisible(button, entry))
         entry.configure(show="*")
+        self.state = True
 
+    def resizeImages(self, dimensions: tuple):
+
+        passwordButtonDimensions = self.bbox(self.canvasObjIDs["passwordLabelID"])[3] - self.bbox(self.canvasObjIDs["passwordLabelID"])[1]
+        passwordButtonDimensions = (int(passwordButtonDimensions/1.917), int(passwordButtonDimensions/1.917))
+
+        # Resize images
+        resizedImages = [self.images[0].resize(dimensions),
+                        self.images[1].resize(passwordButtonDimensions),
+                        self.images[2].resize(tuple(int(x*1.5) for x in passwordButtonDimensions))]
+
+        for id, im in enumerate(resizedImages):
+            self.imageObject[id] = ImageTk.PhotoImage(image=im)
 
 
 # Test case
 
 if __name__ == "__main__":
     # Create Main Window, and center it
-    window = ttk.Window(title="Keai IWMS", themename="cosmo", size=(1280, 720), resizable=[False,False])
+    window = ttk.Window(title="Keai IWMS", themename="cosmo", size=(1280, 720), resizable=[True,True])
     ttk.window.Window.place_window_center(window)
 
     # Creates Login Object
