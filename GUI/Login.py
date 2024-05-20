@@ -58,8 +58,8 @@ class Login(tkinter.Canvas):
         passwordEntry.bind("<Return>", lambda event: loginButton.focus())
 
         # Preview Text
-        previewText(emailEntry, "emailEntry", self.styleObj)
-        previewText(passwordEntry, "passwordEntry", self.styleObj)
+        previewText(emailEntry, "emailEntry")
+        previewText(passwordEntry, "passwordEntry")
 
         # Display Canvas Objects
         self.canvasObjIDs = {
@@ -179,7 +179,7 @@ class Login(tkinter.Canvas):
 
 if __name__ == "__main__":
     # Create Main Window, and center it
-    window = ttk.Window(title="Keai IWMS", themename="cosmo", size=(1280, 720), resizable=[True,True])
+    window = ttk.Window(title="Keai IWMS", themename="flatly", size=(1280, 720), resizable=[True,True])
     ttk.window.Window.place_window_center(window)
 
     # Creates Login Object

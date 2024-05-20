@@ -1,0 +1,12 @@
+{
+  "emailEntry": "abc@companyKEAI.com",
+  "passwordEntry": "abcd1234!",
+  "productIDEntry": "Product ID",
+  "productNameEntry": "Archaic Chair",
+  "productDescriptionEntry": "The chair, a silent sentinel, bore witness to the passage of time.",
+  "priceEntry": "29.99",
+  "quantityEntry" : "873",
+  "locationEntry" : "Choose a location",
+  "preferredVendorEntry": "Choose a vendor",
+  "serialNumberIDEntry": "YYMM-00001"
+}
