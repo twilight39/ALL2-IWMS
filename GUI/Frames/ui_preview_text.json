@@ -8,5 +8,13 @@
   "quantityEntry" : "873",
   "locationEntry" : "Choose a location",
   "preferredVendorEntry": "Choose a vendor",
-  "serialNumberIDEntry": "YYMM-00001"
+  "serialNumberIDEntry": "YYMM-00001",
+  "customerIDEntry": "Customer ID - Customer Name",
+  "saleIDEntry": "Sales ID",
+  "taskDescriptionEntry": "Move X of product Y from location Z to Packaging.",
+  "employeeNameEntry": "Employee Name",
+  "etaEntry": "YYYY-MM-DD",
+  "progressEntry": "Work Progress",
+  "vendorNameEntry": "Vendor Name",
+  "contactNumberEntry": "60161234567"
 }

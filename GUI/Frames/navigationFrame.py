@@ -3,9 +3,15 @@ import ttkbootstrap as ttk
 from PIL import ImageTk, Image, ImageDraw
 from utils import fonts
 
+from productFrame import productFrame
+from purchaseOrderFrame import purchaseOrderFrame
+from salesOrderFrame import salesOrderFrame
+from taskFrame import taskFrame
+from vendorFrame import vendorFrame
+
 class navigationFrame(ttk.Frame):
 
-    def __init__(self, master):
+    def __init__(self, master:ttk.Window, role:str) -> None:
 
         # Button Configuration for roles
         buttonConfig = {
@@ -20,8 +26,8 @@ class navigationFrame(ttk.Frame):
 
         # Application Images
         self.images = [
-            Image.open('Graphics/settingsIcon.png').resize((40, 40)),
-            self.make_circular_image('Graphics/testPFP.png', 200)
+            Image.open('../Graphics/settingsIcon.png').resize((40, 40)),
+            self.make_circular_image('../Graphics/testPFP.png', 200)
         ]
 
         self.imageObject = []
@@ -31,7 +37,9 @@ class navigationFrame(ttk.Frame):
         # References
         self.Fonts = fonts()
         self.styleObj = master.style
-        self.role = "Administrator" # Database Logic Required
+        self.master = master
+        self.role = role
+        self.rFrame = productFrame(self.master, self.role)
 
         # Create Widgets
         northFrame = ttk.Frame(self, bootstyle="warning", padding=20)
@@ -75,7 +83,7 @@ class navigationFrame(ttk.Frame):
         # Create and grid buttons
         self.styleObj.configure(style="dark.Link.TButton", font=self.Fonts.get_font("regular2"), foreground="black")
         for row, button_text in enumerate(buttonConfig[self.role], start=1):
-            button = ttk.Button(southFrame, text=button_text, bootstyle="dark-link")
+            button = ttk.Button(southFrame, text=button_text, bootstyle="dark-link", command=lambda x=button_text: self.getButtonCommand(x))
             button.grid(row=row, column=1, sticky="we")
             southFrame.rowconfigure(row, weight=1)
         southFrame.rowconfigure(0, weight=1)
@@ -87,7 +95,6 @@ class navigationFrame(ttk.Frame):
             southFrame.rowconfigure(8, weight=1)
 
 
-
         # Debugging
         # self.bind("<Configure>", lambda event: print(self.winfo_width()))
         # print(dashboardButton['style'])
@@ -97,6 +104,27 @@ class navigationFrame(ttk.Frame):
         #southFrame.configure(relief="sunken")
         #userFrame.configure(relief="sunken")
         #KEAILabel.configure(relief="sunken")
+
+    def getButtonCommand(self, button_text):
+        if button_text == "Product":
+            self.rFrame.destroy()
+            self.rFrame = productFrame(self.master, self.role)
+
+        elif button_text == "Purchase Order":
+            self.rFrame.destroy()
+            self.rFrame = purchaseOrderFrame(self.master, self.role)
+
+        elif button_text == "Sales Order":
+            self.rFrame.destroy()
+            self.rFrame = salesOrderFrame(self.master, self.role)
+
+        elif button_text == "Tasks":
+            self.rFrame.destroy()
+            self.rFrame = taskFrame(self.master, self.role)
+
+        elif button_text == "Vendor":
+            self.rFrame.destroy()
+            self.rFrame = vendorFrame(self.master, self.role)
 
     def make_circular_image(self, image_path, output_diameter):
 
@@ -127,7 +155,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Navigation Frame
-    lFrame = navigationFrame(window)
+    lFrame = navigationFrame(window, "Administrator")
 
     # Starts Event Main Loop
     window.mainloop()

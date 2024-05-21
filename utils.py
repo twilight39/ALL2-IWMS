@@ -80,7 +80,7 @@ class validation:
             "password" : validator(self.validatePassword),
             "string": validator(self.validateString),
             "price": validator(self.validatePrice),
-            "quantity": validator(self.validateQuantity)
+            "integer": validator(self.validateInteger)
             #"vendor"
         }
 
@@ -176,7 +176,7 @@ class validation:
             self.errText[event.widget].set("Only numbers are allowed.")
             return False
 
-    def validateQuantity(self, event):
+    def validateInteger(self, event):
         if event.postchangetext == "":
             self.errText[event.widget].set("")
             return True
@@ -196,75 +196,9 @@ class validation:
         with open("ui_preview_text.json", "r") as f:
             previewText = json.load(f)
         for i, k in enumerate(key):
-            print(previewText.get(k, ""))
-            print(stringVarList[i].get())
+            #print(previewText.get(k, ""))
+            #print(stringVarList[i].get())
             if previewText.get(k, "") == stringVarList[i].get() or stringVarList[i].get() == "":
                 button.configure(state="disabled")
                 return False
         return True
-
-
-class widgets:
-
-    @staticmethod
-    def create_popup_title(frame, title, font=None):
-        label = ttk.Label(frame, text=title, bootstyle="warning-inverse", foreground="black", anchor="center")
-        if font:
-            label.configure(font=font.get_font("header2"))
-        label.grid(row=1, column=1, sticky="nwes")
-        frame.rowconfigure(1, weight=1)
-        frame.columnconfigure(1, weight=1)
-
-    @staticmethod
-    def create_form_entry(frame, label, variable, errVariable, font=None):
-
-        lbl = ttk.Label(master=frame, text=label.title())
-        lbl.grid(row=0, column=1, sticky="sw")
-
-        ent = ttk.Entry(master=frame, textvariable=variable)
-        ent.grid(row=1, column=1, sticky="we")
-
-        #print(ent.nametowidget(ent.cget("textvariable")).get())
-        #print(variable.get())
-
-        errMsg = ttk.Label(master=frame, textvariable=errVariable, foreground=ttk.style.Style.get_instance().theme.colors.get("danger"))
-        errMsg.grid(row=2, column=1, sticky="nwe")
-
-        if font:
-            errMsg.configure(font=font.get_font("error"))
-
-
-        frame.rowconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
-        frame.rowconfigure(2, weight=1)
-        frame.columnconfigure(1, weight=1)
-
-    @staticmethod
-    def create_form_combobox(frame, label, var, errVar, options):
-        lbl = ttk.Label(master=frame, text=label.title())
-        lbl.grid(row=0, column=1, sticky="sw")
-
-        ent = ttk.Combobox(master=frame, textvariable=var, values=options)
-        ent.grid(row=1, column=1, sticky="we")
-
-        errMsg = ttk.Label(master=frame, textvariable=errVar)
-        errMsg.grid(row=2, column=1, sticky="nwe")
-
-        frame.rowconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
-        frame.rowconfigure(2, weight=1)
-        frame.columnconfigure(1, weight=1)
-
-    @staticmethod
-    def create_buttonbox(frame, cancelCommand, submitCommand):
-        sub_btn = ttk.Button(master=frame, text="Submit", command=submitCommand, bootstyle="success", state="disabled")
-        sub_btn.focus_set()
-        sub_btn.grid(row=1, column=2, sticky="e")
-
-        cnl_btn = ttk.Button(master=frame, text="Cancel", command=cancelCommand, bootstyle="danger")
-        cnl_btn.grid(row=1, column=1, sticky="e")
-
-        frame.rowconfigure(1, weight=1)
-        frame.columnconfigure(0, weight=20)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)

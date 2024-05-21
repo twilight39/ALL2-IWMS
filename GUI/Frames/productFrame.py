@@ -1,7 +1,6 @@
 import ttkbootstrap.toast
-
 from pageFrame import *
-from navigationFrame import navigationFrame
+
 
 class productFrame(pageFrame):
 
@@ -12,8 +11,8 @@ class productFrame(pageFrame):
                          title="Product",
                          role=role,
                          button_config={
-                             "Worker": ["Add, Update"],
-                             "Supervisor": ["Add, Update"],
+                             "Worker": ["Add", "Update"],
+                             "Supervisor": ["Add", "Update"],
                              "Administrator": ["Create", "Add", "Update", "Delete"]
                          })
 
@@ -108,7 +107,7 @@ class productFrame(pageFrame):
         # Validation
         valObj = validation()
         valObj.validate(widget=toplevel.entries[0], key="string", errStringVar=toplevel.errVar[0])
-        valObj.validate(widget=toplevel.entries[1], key="quantity", errStringVar=toplevel.errVar[1])
+        valObj.validate(widget=toplevel.entries[1], key="integer", errStringVar=toplevel.errVar[1])
         # Custom database validation required for location and serial number
 
         # Bindings
@@ -146,7 +145,7 @@ class productFrame(pageFrame):
 
         # Validation
         valObj = validation()
-        valObj.validate(widget=toplevel.entries[0], key="quantity", errStringVar=toplevel.errVar[0])
+        valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
         valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
         # Custom database validation required for location and quantity
 
@@ -165,6 +164,7 @@ class productFrame(pageFrame):
 
 # Test Case
 if __name__ == "__main__":
+    from navigationFrame import navigationFrame
 
     # Create Main Window, and center it
     window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
