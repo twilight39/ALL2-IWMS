@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from utils import *
 import ttkbootstrap as ttk
 from ttkbootstrap.tableview import Tableview
-import ttkbootstrap.window
+from PIL import Image, ImageTk
+from notificationFrame import notificationFrame
 
 class pageFrame(ttk.Frame, ABC):
 
@@ -26,9 +27,14 @@ class pageFrame(ttk.Frame, ABC):
         self.masterWindow = master
         self.button_config = button_config
         self.role = role
-
         self.styleObj = ttk.style.Style.get_instance()
         self.font = fonts()
+        self.images = [
+            Image.open('../Graphics/notificationIcon.png').resize((50, 50))
+            ]
+        self.imageObject = []
+        for im in self.images:
+            self.imageObject += [ImageTk.PhotoImage(image=im)]
 
         # Create Frames
         topFrame = ttk.Frame(self)
@@ -43,15 +49,18 @@ class pageFrame(ttk.Frame, ABC):
 
         # Top Frame Widgets
         productLabel = ttk.Label(topFrame, text=title, font=self.font.fonts["header3"])
+        notificationButton = ttk.Button(topFrame, image=self.imageObject[0], bootstyle="light", command=lambda: notificationFrame(self.masterWindow, self.role))
         productLabel.grid(row=1, column=1, sticky="nw", padx=20, pady=20)
+        notificationButton.grid(row=1, column=2, sticky="nes")
 
         buttonFrame = ttk.Frame(topFrame, padding=20)
-        buttonFrame.grid(row=2, column=1, sticky="nwes")
+        buttonFrame.grid(row=2, column=1, columnspan=2, sticky="nwes")
         self._create_buttons(buttonFrame)
 
         topFrame.rowconfigure(1, weight=1)
         topFrame.rowconfigure(2, weight=3)
         topFrame.columnconfigure(1, weight=1)
+        topFrame.columnconfigure(2, weight=0)
 
         # Bottom Frame Widgets
         self.tableview = Tableview(

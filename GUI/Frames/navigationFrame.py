@@ -9,6 +9,7 @@ from salesOrderFrame import salesOrderFrame
 from taskFrame import taskFrame
 from vendorFrame import vendorFrame
 
+
 class navigationFrame(ttk.Frame):
 
     def __init__(self, master:ttk.Window, role:str) -> None:
@@ -93,6 +94,8 @@ class navigationFrame(ttk.Frame):
             southFrame.rowconfigure(4, weight=10)
         else:
             southFrame.rowconfigure(8, weight=1)
+
+
 
 
         # Debugging
