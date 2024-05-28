@@ -267,3 +267,133 @@ def delete_user(worker_id, conn):
         print("User deleted successfully.")
     except sqlite3.Error as e:
         print(f"Error deleting user: {e}")
+
+
+def create_table():
+    # Connect or create database (if it doesn't exist)
+    conn = sqlite3.connect('TESTER ALL.db')
+    c = conn.cursor()
+
+    # Create tables
+    c.execute('''CREATE TABLE Workers (
+                    WorkerID INTEGER PRIMARY KEY,
+                    Name TEXT NOT NULL,
+                    RoleID INTEGER NOT NULL,
+                    ContactNumber TEXT,
+                    FOREIGN KEY (RoleID) REFERENCES Roles(RoleID)
+                );''')
+
+    c.execute('''CREATE TABLE Roles (
+                    RoleID INTEGER PRIMARY KEY,
+                    RoleName TEXT NOT NULL
+                );''')
+
+    c.execute('''CREATE TABLE Tasks (
+                    TaskID INTEGER PRIMARY KEY,
+                    WorkerID INTEGER NOT NULL,
+                    TaskDesc TEXT,
+                    TaskStatus TEXT,
+                    ETA DATE,
+                    TBatchID INTEGER,
+                    FOREIGN KEY (TBatchID) REFERENCES Task_Batch(TBatchID),
+                    FOREIGN KEY (WorkerID) REFERENCES Workers(WorkerID)
+                );''')
+
+    c.execute('''CREATE TABLE Notif (
+                    NotifID INTEGER PRIMARY KEY,
+                    WorkerID INTEGER NOT NULL,
+                    TimeStamp TEXT,
+                    NotifDesc TEXT,
+                    FOREIGN KEY (WorkerID) REFERENCES Workers(WorkerID)
+                );''')
+
+    c.execute('''CREATE TABLE Accounts (
+                    AccountID INTEGER PRIMARY KEY,
+                    WorkerID INTEGER,
+                    Email TEXT NOT NULL,
+                    HashedPW TEXT NOT NULL,
+                    Salt TEXT NOT NULL,
+                    FOREIGN KEY (WorkerID) REFERENCES Workers(WorkerID)
+                );''')
+
+    c.execute('''CREATE TABLE Products (
+                    ProductID INTEGER PRIMARY KEY,
+                    ProductName TEXT NOT NULL,
+                    Description TEXT,
+                    Price REAL,
+                    PreferredSupplierID INTEGER NOT NULL,
+                    FOREIGN KEY (PreferredSupplierID) REFERENCES Suppliers(SupplierID)
+                );''')
+
+    c.execute('''CREATE TABLE Inventory (
+                    Iventory_ID INTEGER PRIMARY KEY,
+                    ProductID INTEGER NOT NULL,
+                    PBatchID INTEGER,
+                    StockQuantity INTEGER,
+                    LocationID INTEGER,
+                    FOREIGN KEY (PBatchID) REFERENCES Product_Batch(PBatchID),
+                    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+                    FOREIGN KEY (LocationID) REFERENCES Locations(LocationID)
+                );''')
+
+    c.execute('''CREATE TABLE Locations (
+                    LocationID INTEGER PRIMARY KEY,
+                    LocationName TEXT NOT NULL
+                );''')
+
+    c.execute('''CREATE TABLE Suppliers (
+                    SupplierID INTEGER PRIMARY KEY,
+                    Name TEXT NOT NULL,
+                    ContactNumber TEXT,
+                    Email TEXT
+                );''')
+
+    c.execute('''CREATE TABLE Sales (
+                    SaleID INTEGER PRIMARY KEY,
+                    Date DATE
+                );''')
+
+    c.execute('''CREATE TABLE Sales_Inventory (
+                    SaleID INTEGER NOT NULL,
+                    ProductID INTEGER NOT NULL,
+                    PBatchID INTEGER,
+                    QuantitySold INTEGER,
+                    UnitPrice REAL,
+                    FOREIGN KEY (PBatchID) REFERENCES Product_Batch(PBatchID),
+                    FOREIGN KEY (SaleID) REFERENCES Sales(SaleID),
+                    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+                );''')
+
+    c.execute('''CREATE TABLE Shipments (
+                    ShipmentID INTEGER PRIMARY KEY,
+                    ProductID INTEGER NOT NULL,
+                    SupplierID INTEGER NOT NULL,
+                    Quantity INTEGER NOT NULL,
+                    ShipmentDate DATE NOT NULL,
+                    FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+                    FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID)
+                );''')
+
+    c.execute('''CREATE TABLE Product_Batch (
+                    PBatchID INTEGER PRIMARY KEY,
+                    PBatchDesc TEXT
+                );''')
+
+    c.execute('''CREATE TABLE Task_Batch (
+                    TBatchID INTEGER PRIMARY KEY,
+                    TBatchDesc TEXT
+                );''')
+
+
+    c.execute("INSERT INTO Roles (RoleName) VALUES ('Admin');")
+    c.execute("INSERT INTO Roles (RoleName) VALUES ('Supervisor');")
+    c.execute("INSERT INTO Roles (RoleName) VALUES ('Worker');")
+
+    c.execute("INSERT INTO Product_Batch (PBatchID, PBatchDesc) VALUES (1, 'Batch 1');")
+    c.execute("INSERT INTO Product_Batch (PBatchID, PBatchDesc) VALUES (2, 'Batch 2');")
+
+    c.execute("INSERT INTO Task_Batch (TBatchID, TBatchDesc) VALUES (1, 'Batch 1');")
+    c.execute("INSERT INTO Task_Batch (TBatchID, TBatchDesc) VALUES (2, 'Batch 2');")
+
+    conn.commit()
+    conn.close()
