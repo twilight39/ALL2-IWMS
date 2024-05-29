@@ -1,18 +1,19 @@
-import tkinter
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image, ImageDraw
+
 from utils import fonts
+from Database import Database
+from configuration import Configuration
 
-from productFrame import productFrame
-from purchaseOrderFrame import purchaseOrderFrame
-from salesOrderFrame import salesOrderFrame
-from taskFrame import taskFrame
-from vendorFrame import vendorFrame
-
+from Frames.productFrame import productFrame
+from Frames.purchaseOrderFrame import purchaseOrderFrame
+from Frames.salesOrderFrame import salesOrderFrame
+from Frames.taskFrame import taskFrame
+from Frames.vendorFrame import vendorFrame
 
 class navigationFrame(ttk.Frame):
 
-    def __init__(self, master:ttk.Window, role:str) -> None:
+    def __init__(self, master:ttk.Window, employeeID:int, rFrame:ttk.Frame) -> None:
 
         # Button Configuration for roles
         buttonConfig = {
@@ -25,22 +26,27 @@ class navigationFrame(ttk.Frame):
         super().__init__(master, bootstyle="warning")
         self.grid(row=0, column=0, sticky="nwes")
 
+        # References
+        self.Fonts = fonts()
+        self.styleObj = master.style
+        self.config = Configuration()
+        self.master = master
+        self.rFrame = rFrame
+        self.db_connection = Database.DatabaseConnection()
+        self.employeeID = employeeID
+        self.name = self.db_connection.get_employee(employeeID)[0]
+        self.role = self.db_connection.get_employee(employeeID)[1]
+
         # Application Images
+        graphicsPath = self.config.getGraphicsPath()
         self.images = [
-            Image.open('../Graphics/settingsIcon.png').resize((40, 40)),
-            self.make_circular_image('../Graphics/testPFP.png', 200)
+            Image.open(f'{graphicsPath}/settingsIcon.png').resize((40, 40)),
+            self.make_circular_image(f'{graphicsPath}/testPFP.png', 200)
         ]
 
         self.imageObject = []
         for im in self.images:
             self.imageObject += [ImageTk.PhotoImage(image=im)]
-
-        # References
-        self.Fonts = fonts()
-        self.styleObj = master.style
-        self.master = master
-        self.role = role
-        self.rFrame = productFrame(self.master, self.role)
 
         # Create Widgets
         northFrame = ttk.Frame(self, bootstyle="warning", padding=20)
@@ -50,8 +56,8 @@ class navigationFrame(ttk.Frame):
         settingsIcon = ttk.Button(northFrame, image=self.imageObject[0],  bootstyle="warning")
         profilePicture = ttk.Label(northFrame, image=self.imageObject[1], bootstyle="warning-inverse") # Placeholder for user image
         userFrame = ttk.Frame(northFrame, bootstyle="warning")
-        userName = ttk.Label(userFrame, text= "A Wild Kaiju", font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=tkinter.CENTER) # To query database
-        userID = ttk.Label(userFrame, text="[Worker ID]", font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=tkinter.CENTER) # To query database
+        userName = ttk.Label(userFrame, text= self.name, font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER) # To query database
+        userID = ttk.Label(userFrame, text="Worker ID: " + str(self.employeeID), font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER) # To query database
 
         # Grid Frames
         northFrame.grid(row=0, column=0, sticky="nwes")
@@ -94,9 +100,6 @@ class navigationFrame(ttk.Frame):
             southFrame.rowconfigure(4, weight=10)
         else:
             southFrame.rowconfigure(8, weight=1)
-
-
-
 
         # Debugging
         # self.bind("<Configure>", lambda event: print(self.winfo_width()))
@@ -150,6 +153,8 @@ class navigationFrame(ttk.Frame):
 # Test Case
 if __name__ == "__main__":
 
+
+
     # Create Main Window, and center it
     window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
     ttk.window.Window.place_window_center(window)
@@ -158,7 +163,9 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Navigation Frame
-    lFrame = navigationFrame(window, "Administrator")
+    rFrame = productFrame(window, "Administrator")
+    lFrame = navigationFrame(window, 1, rFrame)
+
 
     # Starts Event Main Loop
     window.mainloop()

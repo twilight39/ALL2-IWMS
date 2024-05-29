@@ -3,7 +3,8 @@ from utils import *
 import ttkbootstrap as ttk
 from ttkbootstrap.tableview import Tableview
 from PIL import Image, ImageTk
-from notificationFrame import notificationFrame
+from Frames.notificationFrame import notificationFrame
+from configuration import Configuration
 
 class pageFrame(ttk.Frame, ABC):
 
@@ -29,8 +30,10 @@ class pageFrame(ttk.Frame, ABC):
         self.role = role
         self.styleObj = ttk.style.Style.get_instance()
         self.font = fonts()
+        self.config= Configuration()
+        graphicsPath = self.config.getGraphicsPath()
         self.images = [
-            Image.open('../Graphics/notificationIcon.png').resize((50, 50))
+            Image.open(f'{graphicsPath}/notificationIcon.png').resize((50, 50))
             ]
         self.imageObject = []
         for im in self.images:

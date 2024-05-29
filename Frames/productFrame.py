@@ -1,5 +1,5 @@
 import ttkbootstrap.toast
-from pageFrame import *
+from Frames.pageFrame import *
 
 
 class productFrame(pageFrame):

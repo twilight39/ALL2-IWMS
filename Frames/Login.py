@@ -2,20 +2,25 @@ import tkinter
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image
 from utils import previewText, validation, fonts
+from Database import Database
+from configuration import Configuration
 
 class Login(tkinter.Canvas):
 
-    def __init__(self, master):
+    def __init__(self, master:ttk.window, onLogin_callback=None):
 
         self.master = master
         self.state = True
         self.prevWindowDimensions =(1280, 720)
 
+        config = Configuration()
+        graphicsPath = config.getGraphicsPath()
+
         # Application Images
         self.images =[
-            Image.open('Graphics/loginBG.png').resize((1280, 720)),
-            Image.open('Graphics/passwordInvisible.png').resize(((24, 24))),
-            Image.open('Graphics/passwordVisible.png').resize((32,32))
+            Image.open(f'{graphicsPath}/loginBG.png').resize((1280, 720)),
+            Image.open(f'{graphicsPath}/passwordInvisible.png').resize(((24, 24))),
+            Image.open(f'{graphicsPath}/passwordVisible.png').resize((32, 32))
         ]
 
         self.imageObject = []
@@ -30,8 +35,10 @@ class Login(tkinter.Canvas):
             "passwordError" : tkinter.StringVar(),
         }
 
-        # Style Object Reference
+        # References
         self.styleObj = master.style
+        self.auth = Database.authentication()
+        self.onLogin_callback = onLogin_callback
 
         # Validation & Fonts Object & Colors
         self.validationObj = validation()
@@ -41,7 +48,9 @@ class Login(tkinter.Canvas):
 
         # Inherit Frame Class
         super().__init__(master)
-        self.pack(fill="both", expand=True)
+        self.grid(row=0, column=0, sticky="nwes")
+        self.master.rowconfigure(0, weight=1)
+        self.master.columnconfigure(0, weight=1)
 
         # Email & Password Widgets
         emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=self.Fonts.get_font("regular"),foreground=greyColor, bootstyle="dark")
@@ -51,7 +60,7 @@ class Login(tkinter.Canvas):
 
         # Login Button Widget
         self.styleObj.configure(style="warning.TButton", font=self.Fonts.get_font("header3"), foreground="black")
-        loginButton = ttk.Button(self, text="Login", style="warning")
+        loginButton = ttk.Button(self, text="Login", style="warning", command=lambda: self.onLogin())
 
         # Bind Enter Key (Email Entry -> Password Entry -> Login Button)
         emailEntry.bind("<Return>", lambda event: passwordEntry.focus())
@@ -85,10 +94,19 @@ class Login(tkinter.Canvas):
         # Visual Validation
         self.VisualValidation(emailEntry, "email", self.textVariables["emailError"], self.canvasObjIDs["emailErrorID"])
         self.VisualValidation(passwordEntry, "password", self.textVariables["passwordError"], self.canvasObjIDs["passwordErrorID"])
-        loginButton.bind("<ButtonPress-1>", lambda event, x=self.canvasObjIDs["buttonErrorID"]: self.ValidateButton(event, x))
 
         # Resize canvas with window
         self.bind("<Configure>", lambda event, x=passwordButton: self.DisplayCanvasObjects(event, x))
+
+    def onLogin(self):
+        print(self.textVariables["email"].get())
+        print(self.textVariables["password"].get())
+        if self.auth.authenticate(self.textVariables["email"].get(), self.textVariables["password"].get()):
+            print("success")
+            self.onLogin_callback(self, 1)
+        else:
+            self.itemconfigure(self.canvasObjIDs["buttonErrorID"], text="Invalid Email or Password")
+            print("fail")
 
     def DisplayCanvasObjects(self, event, passwordButton):
 
@@ -125,31 +143,17 @@ class Login(tkinter.Canvas):
         self.prevWindowDimensions = (window_width, window_height)
 
         # Debugging
-        print("Email Label (x1, y1, x2, y2): " + str(self.bbox(4)))
-        print("Email Entry (x1, y1, x2, y2): " + str(self.bbox(5)))
-        print("Password Label (x1, y1, x2, y2): " + str(self.bbox(7)))
-        print("Password Entry (x1, y1, x2, y2): " + str(self.bbox(8)))
-        print("Password Button (x1, y1, x2, y2): " + str(self.bbox(9)))
-        print("\n")
-
-
+        #print("Email Label (x1, y1, x2, y2): " + str(self.bbox(4)))
+        #print("Email Entry (x1, y1, x2, y2): " + str(self.bbox(5)))
+        #print("Password Label (x1, y1, x2, y2): " + str(self.bbox(7)))
+        #print("Password Entry (x1, y1, x2, y2): " + str(self.bbox(8)))
+        #print("Password Button (x1, y1, x2, y2): " + str(self.bbox(9)))
+        #print("\n")
 
     # Validates a widget and updates its error message
     def VisualValidation(self, widget, key, errStringVar, errID):
         self.validationObj.validate(widget, key, errStringVar)
         widget.bind("<FocusOut>", lambda event: self.itemconfigure(errID, text=errStringVar.get()), add="+")
-
-    # Temporary Check if Login succeeds; Replace once database is implemented!!!
-    def ValidateButton(self, event, buttonErrorID):
-        if (self.textVariables["email"].get() != "abc@companyKEAI.com" and
-            self.textVariables["emailError"].get() == "" and
-            self.textVariables["password"].get() != "abcd1234!" and
-            self.textVariables["passwordError"].get() == ""
-        ):
-            self.itemconfigure(buttonErrorID, text="")
-
-        else:
-            self.itemconfigure(buttonErrorID, text="Invalid Email or Password")
 
     def passwordVisible(self, button, entry):
         button.configure(image=self.imageObject[2], command=lambda: self.passwordInvisible(button, entry))
@@ -187,5 +191,3 @@ if __name__ == "__main__":
 
     # Starts Event Main Loop
     window.mainloop()
-
-    pass

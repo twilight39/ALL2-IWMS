@@ -2,6 +2,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
 from PIL import ImageTk, Image
 from utils import fonts
+from configuration import Configuration
 
 class notificationFrame(ttk.Frame):
 
@@ -9,7 +10,9 @@ class notificationFrame(ttk.Frame):
 
         self.master = master
         self.Fonts = fonts()
-        self.icon = Image.open('../Graphics/notificationIcon.png').resize((40, 40))
+        self.config = Configuration()
+        graphicsPath = self.config.getGraphicsPath()
+        self.icon = Image.open(f'{graphicsPath}/notificationIcon.png').resize((40, 40))
         self.icon = ImageTk.PhotoImage(image=self.icon)
 
         # Creates and places Notification Frame

@@ -1,11 +1,10 @@
-import base64
-import hashlib
 import ttkbootstrap as ttk
 import tkinter
 from ttkbootstrap.validation import validator, add_validation
 import re
 import json
-import bcrypt
+
+from configuration import Configuration
 
 def singleton(cls):
   """Decorator to create a singleton class."""
@@ -41,7 +40,8 @@ class previewText:
         self.styleObj = ttk.style.Style.get_instance()
 
         # Get preview text from ui_preview_text.json via key
-        with open("ui_preview_text.json", "r") as f:
+        config = Configuration()
+        with open(config.getPreviewFile(), "r") as f:
             self.previewText = json.load(f).get(key, "")
 
         # Bind Widget to focus & unfocus operations
@@ -206,46 +206,7 @@ class validation:
                 return False
         return True
 
-@singleton
-class authentication:
 
-    # Constructor connects to sqlite database
-    def __init__(self):
-        # Connection to database here
-        pass
-
-    def authenticate(self, password:str) -> bool:
-        # Retrieve Stored Hash from Database
-        # Update once database implemented!!
-        hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), bcrypt.gensalt(rounds=14))
-        if bcrypt.checkpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), hashed):
-            return True
-        return False
-
-    def resetPassword(self, employeeID:int, password:str) -> None:
-        hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), bcrypt.gensalt(rounds=14))
-        # Store Hashed Password
-        # Use EmployeeID unique key to update Accounts Table row
-
-    def createAccount(self, adminID:int, employeeID: int, adminPassword: str, employeePassword: str) -> bool:
-        # Retrieve Stored Hash from Database
-        # Update once database implemented!!
-        adminHashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(adminPassword.encode()).digest()), bcrypt.gensalt(rounds=14))
-        if bcrypt.checkpw(base64.b64encode(hashlib.sha256(adminPassword.encode()).digest()), adminHashed):
-            hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(employeePassword.encode()).digest()), bcrypt.gensalt(rounds=14))
-            # Use EmployeeID unique key to create Accounts Table row and store hash
-            return True
-        return False
-
-    def deleteAccount(self, adminID:int, password:str, employeeID:int) -> bool:
-        # Retrieve Stored Hash from Database
-        # Update once database implemented!!
-        adminHashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), bcrypt.gensalt(rounds=14))
-        if bcrypt.checkpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), adminHashed):
-            # use employeeID unique key to delete Accounts Table row
-            return True
-        return False
 
 if __name__ == "__main__":
-    obj = authentication()
-    obj.authenticate("Billie Ellish")
+    pass
