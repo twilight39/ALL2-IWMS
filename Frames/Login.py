@@ -55,6 +55,7 @@ class Login(tkinter.Canvas):
         # Email & Password Widgets
         emailEntry = ttk.Entry(self, textvariable=self.textVariables["email"], font=self.Fonts.get_font("regular"),foreground=greyColor, bootstyle="dark")
         passwordEntry = ttk.Entry(self, textvariable=self.textVariables["password"], font=self.Fonts.get_font("regular"), foreground=greyColor, show ="*", bootstyle="dark")
+        self.styleObj.configure(style="light.TButton", background="white", borderwidth=0)
         passwordButton = ttk.Button(self, image=self.imageObject[1], bootstyle="light", padding=0)
         passwordButton.configure(command=lambda: self.passwordVisible(passwordButton, passwordEntry))
 

@@ -3,6 +3,7 @@ import os
 import bcrypt
 import base64
 import hashlib
+from datetime import date, datetime
 
 from configuration import Configuration
 
@@ -50,12 +51,54 @@ class DatabaseConnection:
                             (employeeID, ))
         return self.cursor.fetchone()
 
+    def query_notification(self, employeeID:int) -> list:
+        try:
+            self.cursor.execute("SELECT RoleID FROM Workers WHERE WorkerID = ?", (employeeID,))
+            roleID = self.cursor.fetchone()[0]
+            notifications = []
+
+            for index in range(3, roleID-1, -1):
+                self.cursor.execute("SELECT NotificationID, TimeStamp, NotificationDesc FROM Notification WHERE WorkerID = ?", (index,))
+                notifications += self.cursor.fetchall()
+
+            notifications = sorted(notifications, key = lambda timestamp:notifications[1])
+            return notifications
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
+
+    def add_notification(self, employeeID:int, message:str) -> bool:
+        try:
+            self.cursor.execute("""INSERT INTO Notification (WorkerID, Timestamp, NotificationDesc)
+                VALUES (?, ?, ?)""", (employeeID, datetime.now(), message,))
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def delete_notifcation(self, notificationID:int) -> bool:
+        try:
+            self.cursor.execute("DELETE FROM Notification WHERE NotificationID = ?", (notificationID,))
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def add_productBatch(self, batchnumber: str) -> bool:
+        self.cursor.execute("INSERT INTO Product_Batch (PBatchNumber) VALUES (?)", (batchnumber,))
+
     def query_product(self) -> list:
-        self.cursor.execute("SELECT ProductID, ProductName, Description FROM Products")
-        products = self.cursor.fetchall()
-        return products
-        #for product in products:
-        #    print(f"ProductID: {product[0]}, ProductName: {product[1]}, Description: {product[2]}")
+        try:
+            self.cursor.execute("SELECT ProductID, ProductName, Description FROM Products")
+            products = self.cursor.fetchall()
+            return products
+        except sqlite3.Error:
+            return []
 
     def add_product(self, product_name:str, description:str, price:float, preferred_supplier_id:int) -> bool:
         try:
@@ -65,7 +108,72 @@ class DatabaseConnection:
                 """, (product_name, description, price, preferred_supplier_id))
             self.connection.commit()
             return True
-        except:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def receive_product(self, productID: int, batchNumber: int, quantity: int) -> bool:
+        try:
+            #print("function called")
+            self.cursor.execute("""
+            INSERT INTO Inventory (ProductID, StockQuantity, LocationID, PBatchID)
+            VALUES (?, ?, ?, ?)
+            """, (productID, quantity, 1, batchNumber,))
+            #print("no error")
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def update_product(self, productID: int, batchNumber: int, srcLocationID: int, desLocationID: int, quantity:int) -> bool:
+        try:
+            srcQuantity = self.cursor.execute("""
+                SELECT StockQuantity FROM Inventory WHERE ProductID = ? AND PBatchID = ? AND LocationID = ?
+                """, (productID, batchNumber, srcLocationID,))
+            srcQuantity = srcQuantity.fetchone()[0] - quantity
+
+            self.cursor.execute("""
+                UPDATE Inventory 
+                SET StockQuantity = ?
+                WHERE ProductID = ? AND PBatchID = ? AND LocationID = ?
+                """, (srcQuantity, productID, batchNumber, srcLocationID,))
+
+            desQuantity = self.cursor.execute("""
+                                        SELECT StockQuantity FROM Inventory WHERE ProductID = ? AND PBatchID = ? AND LocationID = ?
+                                        """, (productID, batchNumber, desLocationID,))
+            try:
+                desQuantity = desQuantity.fetchone()[0] + quantity
+
+                self.cursor.execute("""
+                    UPDATE Inventory 
+                    SET StockQuantity = ?
+                    WHERE ProductID = ? AND PBatchID = ? AND LocationID = ?
+                    """, (desQuantity, productID, batchNumber, desLocationID,))
+            except:
+                desQuantity = quantity
+
+                self.cursor.execute("""
+                    INSERT INTO Inventory (ProductID, StockQuantity, LocationID, PBatchID)
+                    VALUES (?, ?, ?, ?)
+                    """, (productID, quantity, desLocationID, batchNumber,))
+
+            self.connection.commit()
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def delete_product(self, productID: int, batchID: int, locationID: int) -> bool:
+        try:
+            self.cursor.execute("DELETE FROM Inventory WHERE ProductID = ?, PBatchID = ?, LocationID =?",
+                                (productID, batchID, locationID,))
+            self.connection.commit()
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def query_vendor(self) -> list:
@@ -79,7 +187,9 @@ class DatabaseConnection:
                            (name, contact_number, email))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def edit_vendor(self,supplier_id:int, name:str, contact_number:str, email:str) -> bool:
@@ -88,7 +198,9 @@ class DatabaseConnection:
                            (name, contact_number, email, supplier_id))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def delete_vendor(self, supplier_id: int) -> bool:
@@ -96,7 +208,9 @@ class DatabaseConnection:
             self.cursor.execute("DELETE FROM Suppliers WHERE SupplierID = ?", (supplier_id,))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def query_tasks(self) -> list:
@@ -115,7 +229,9 @@ class DatabaseConnection:
             """, (description, worker_id, eta, batch_id))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def update_task(self, task_id:int, description:str, worker_id:int, progress:str, eta:str, batch_id: int = None) -> bool:
@@ -127,7 +243,9 @@ class DatabaseConnection:
             """, (description, worker_id, progress, eta, batch_id,task_id))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def delete_task(self, task_id:int) -> bool:
@@ -135,7 +253,9 @@ class DatabaseConnection:
             self.cursor.execute("DELETE FROM Tasks WHERE TaskID = ?", (task_id,))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
     def query_taskBatch(self) -> list:
@@ -158,30 +278,131 @@ class DatabaseConnection:
                 """, (batchID, i,))
             self.connection.commit()
             return True
-        except sqlite3.Error:
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
-    def update_taskBatch(self, batchID: int, batchDesc:str = None, taskIDs: list = None, employeeID:int = None) -> bool:
+    def update_taskBatch(self, batchID: int, batchDesc:str = "", taskIDs: list = [], employeeID:int = 0) -> bool:
         try:
-            if batchDesc:
-                self.cursor.execute("UPDATE Task_Batch SET (TBatchDesc) VALUES ? WHERE TBatchID = ?", (batchDesc, batchID,))
+            if batchDesc != "":
+                self.cursor.execute("UPDATE Task_Batch SET TBatchDesc = ? WHERE TBatchID = ?", (batchDesc, batchID,))
 
             if taskIDs:
                 self.cursor.execute("UPDATE Tasks SET TBatchID = NULL WHERE TBatchID = ?", (batchID,))
                 for index in taskIDs:
                     self.cursor.execute("UPDATE Tasks SET TBatchID = ? WHERE TaskID = ?", (batchID, index))
 
-            if employeeID:
+            if employeeID != 0:
                 self.cursor.execute("UPDATE Tasks SET WorkerID = ? WHERE TBatchID =?", (employeeID, batchID))
 
             self.connection.commit()
             return True
 
-        except sqlite3.Error:
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
             return False
 
+    def delete_taskBatch(self, batchID: int) -> bool:
+        try:
+            self.cursor.execute("""UPDATE Tasks SET TBatchID = NULL WHERE TBatchID = ?""", (batchID,))
+            self.cursor.execute("""DELETE FROM Task_Batch WHERE TBatchID = ?""", (batchID,))
+            self.connection.commit()
+            return True
 
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
 
+    def query_purchaseOrder(self):
+        """Returns: [Purchase ID: int, Product Name: str, Quantity: int, Batch Number: int, Vendor Name: str, Date: str]"""
+        try:
+            self.cursor.execute("""
+            SELECT s.ShipmentID, p.ProductName, s.Quantity, s.PBatchID, v.Name, s.ShipmentDate
+            FROM Shipments s 
+            LEFT JOIN Products p ON s.ProductID = p.ProductID
+            LEFT JOIN Suppliers v ON s.SupplierID = v.SupplierID
+            """)
+            return self.cursor.fetchall()
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def add_purchaseOrder(self, productID:int, quantity:int, vendorID:int, batchID:int) -> bool:
+        try:
+            self.cursor.execute("""INSERT INTO Shipments (ProductID, Quantity, SupplierID, ShipmentDate, PBatchID)
+            VALUES (?, ?, ?, ?, ?)""", (productID, quantity, vendorID, date.today(), batchID,))
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def delete_purchaseOrder(self, purchaseOrderID: int) -> bool:
+        try:
+            self.cursor.execute("DELETE FROM Shipments WHERE ShipmentID = ?", (purchaseOrderID,))
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return  False
+
+    def query_salesOrder(self) -> list:
+        """Returns: [Sales ID, Product Name, Quantity, Batch ID, Date]"""
+        try:
+            self.cursor.execute("""
+            SELECT s.SaleID, p.ProductName, i.QuantitySold, i.PBatchID, s.Date
+            FROM Sales s
+            LEFT JOIN Sales_Inventory i ON s.SaleID = i.SaleID
+            LEFT JOIN Products p ON i.ProductID = p.ProductID
+            """)
+            return self.cursor.fetchall()
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
+
+    def add_salesOrder(self, productID: int, batchID: int, quantity: int) -> bool:
+        try:
+            self.cursor.execute("INSERT INTO Sales (Date) VALUES (?)", (date.today(),))
+            saleID = self.cursor.lastrowid
+            # Query Price from Product Table
+            self.cursor.execute("SELECT Price FROM Products WHERE ProductID = ?", (productID,))
+            unitPrice = self.cursor.fetchone()[0]
+            self.cursor.execute("INSERT INTO Sales_Inventory (SaleID, ProductID, PBatchID, QuantitySold, UnitPrice) VALUES (?, ?, ?, ?, ?)", (saleID, productID, batchID, quantity, unitPrice))
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def update_salesOrder(self, saleID: int, productID:int, batchID:int, quantity:int) -> bool:
+        """Adds another product into a Sales Order."""
+        try:
+            self.cursor.execute("SELECT Price FROM Products WHERE ProductID = ?", (productID,))
+            unitPrice = self.cursor.fetchone()[0]
+            self.cursor.execute("""INSERT INTO Sales_Inventory (SaleID, ProductID, PBatchID, QuantitySold, UnitPrice)
+                                        VALUES (?, ?, ?, ?, ?)""",
+                                        (saleID, productID, batchID, quantity, unitPrice))
+            self.connection.commit()
+            return True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
+    def delete_salesOrder(self, saleID:int) -> bool:
+        try:
+            self.cursor.execute("DELETE FROM Sales_Inventory WHERE SaleID = ?", (saleID,))
+            self.cursor.execute("DELETE FROM Sales WHERE SaleID = ?", (saleID,))
+            self.connection.commit()
+            return  True
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
 
     def _create_tables(self):
         self.cursor.execute('''
@@ -216,7 +437,7 @@ class DatabaseConnection:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Tasks (
             TaskID INTEGER PRIMARY KEY AUTOINCREMENT,
-            WorkerID INTEGER NOT NULL,
+            WorkerID INTEGER,
             TaskDesc TEXT,
             TaskStatus TEXT,
             ETA TEXT,
@@ -237,7 +458,7 @@ class DatabaseConnection:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Product_Batch (
             PBatchID INTEGER PRIMARY KEY AUTOINCREMENT,
-            PBatchDesc TEXT);
+            PBatchNumber TEXT);
             ''')
 
         self.cursor.execute('''
@@ -283,7 +504,9 @@ class DatabaseConnection:
             Quantity INTEGER NOT NULL,
             SupplierID INTEGER NOT NULL,
             ShipmentDate TEXT NOT NULL,
+            PBatchID TEXT NOT NULL,
             FOREIGN KEY (ProductID) REFERENCES Products(ProductID),
+            FOREIGN KEY (PBatchID) REFERENCES Product_Batch(PBatchID),
             FOREIGN KEY (SupplierID) REFERENCES Suppliers(SupplierID));
             ''')
 
@@ -397,12 +620,13 @@ class authentication:
 
 # Test Case
 if __name__ == "__main__":
-    auth = authentication()
+    print(datetime.now())
+    #auth = authentication()
     #if auth.authenticate("ahmad@gmail.com", "admin1234"):
     #    print("true")
 
-    if auth.authenticate("john@example.com", "JohnIsDumb"):
-        print ("true")
+    #if auth.authenticate("john@example.com", "JohnIsDumb"):
+    #    print ("true")
 
     """
     auth.createAccount(
@@ -420,3 +644,4 @@ if __name__ == "__main__":
     #)
 
     #con = DatabaseConnection()
+    #con.add_salesOrder()

@@ -52,6 +52,7 @@ class pageFrame(ttk.Frame, ABC):
 
         # Top Frame Widgets
         productLabel = ttk.Label(topFrame, text=title, font=self.font.fonts["header3"])
+        self.styleObj.configure(style="light.TButton", background="white", borderwidth=0)
         notificationButton = ttk.Button(topFrame, image=self.imageObject[0], bootstyle="light", command=lambda: notificationFrame(self.masterWindow, self.role))
         productLabel.grid(row=1, column=1, sticky="nw", padx=20, pady=20)
         notificationButton.grid(row=1, column=2, sticky="nes")
