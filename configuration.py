@@ -30,7 +30,7 @@ class Configuration:
     def _updatePaths(self) -> None:
         data = {
             "Graphics" : f"{self.repo_file_path}/Graphics",
-            "Database" : f"{self.repo_file_path}/Database.py",
+            "Database" : f"{self.repo_file_path}/Database/Database.db",
             "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json"
         }
 

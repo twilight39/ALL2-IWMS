@@ -34,8 +34,8 @@ class navigationFrame(ttk.Frame):
         self.rFrame = rFrame
         self.db_connection = Database.DatabaseConnection()
         self.employeeID = employeeID
-        self.name = self.db_connection.get_employee(employeeID)[0]
-        self.role = self.db_connection.get_employee(employeeID)[1]
+        self.name = self.db_connection.query_employee(employeeID)[0]
+        self.role = self.db_connection.query_employee(employeeID)[1]
 
         # Application Images
         graphicsPath = self.config.getGraphicsPath()
