@@ -66,6 +66,7 @@ class Login(tkinter.Canvas):
         # Bind Enter Key (Email Entry -> Password Entry -> Login Button)
         emailEntry.bind("<Return>", lambda event: passwordEntry.focus())
         passwordEntry.bind("<Return>", lambda event: loginButton.focus())
+        loginButton.bind("<Return>", lambda event: self.onLogin())
 
         # Preview Text
         previewText(emailEntry, "emailEntry")

@@ -4,6 +4,7 @@
   "productIDEntry": "Product ID",
   "productNameEntry": "Archaic Chair",
   "productDescriptionEntry": "The chair, a silent sentinel, bore witness to the passage of time.",
+  "0Entry" : "0",
   "priceEntry": "29.99",
   "quantityEntry" : "873",
   "locationEntry" : "Choose a location",
@@ -16,5 +17,12 @@
   "etaEntry": "YYYY-MM-DD",
   "progressEntry": "Work Progress",
   "vendorNameEntry": "Vendor Name",
-  "contactNumberEntry": "60161234567"
+  "contactNumberEntry": "60161234567",
+  "productNoEntry" : "FUR-Type-Size-Color-Number",
+  "shipmentNoEntry" : "SHIP-YYMMDD-[A-Z]",
+  "inventoryProductEntry" : "FUR-SOF-L-GR-001 - Product Name",
+  "productBatchEntry" : "BATCH-YYMMDD-[A-Z]",
+  "productIDNameEntry" : "1 - Product Name",
+  "saleNoEntry" : "SALE-000000-A",
+  "dateEntry": "YYYY-MM-DD"
 }

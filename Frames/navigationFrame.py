@@ -6,10 +6,12 @@ from Database import Database
 from configuration import Configuration
 
 from Frames.productFrame import productFrame
+from Frames.inventoryFrame import inventoryFrame
 from Frames.purchaseOrderFrame import purchaseOrderFrame
 from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
+
 
 class navigationFrame(ttk.Frame):
 
@@ -17,9 +19,9 @@ class navigationFrame(ttk.Frame):
 
         # Button Configuration for roles
         buttonConfig = {
-            "Worker" : ["Dashboard", "Product", "Report"],
-            "Supervisor" : ["Dashboard", "Product", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"],
-            "Administrator": ["Dashboard", "Product", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"]
+            "Worker" : ["Dashboard", "Inventory", "Report"],
+            "Supervisor" : ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"],
+            "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"]
         }
 
         # Inherit ttk.Frame, sets colour to warning
@@ -116,6 +118,10 @@ class navigationFrame(ttk.Frame):
             self.rFrame.destroy()
             self.rFrame = productFrame(self.master, self.role)
 
+        if button_text == "Inventory":
+            self.rFrame.destroy()
+            self.rFrame = inventoryFrame(self.master, self.role)
+
         elif button_text == "Purchase Order":
             self.rFrame.destroy()
             self.rFrame = purchaseOrderFrame(self.master, self.role)
@@ -163,7 +169,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Navigation Frame
-    rFrame = productFrame(window, "Administrator")
+    rFrame = inventoryFrame(window, "Administrator")
     lFrame = navigationFrame(window, 1, rFrame)
 
 

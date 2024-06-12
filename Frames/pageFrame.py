@@ -2,7 +2,11 @@ from abc import ABC, abstractmethod
 from utils import *
 import ttkbootstrap as ttk
 from ttkbootstrap.tableview import Tableview
+from  ttkbootstrap.toast import ToastNotification
+from ttkbootstrap.dialogs import Messagebox
 from PIL import Image, ImageTk
+from functools import partial
+
 from Frames.notificationFrame import notificationFrame
 from configuration import Configuration
 
@@ -70,9 +74,9 @@ class pageFrame(ttk.Frame, ABC):
         self.tableview = Tableview(
             master=bottomFrame,
             searchable=True,
-            autofit=True,
             stripecolor=(self.styleObj.theme.colors.get("light"), None),
-            bootstyle="secondary"
+            autofit=True,
+            bootstyle="primary"
         )
         self.tableview.grid(row=1, column=1, sticky="nwes")
 
@@ -104,6 +108,11 @@ class pageFrame(ttk.Frame, ABC):
             anchor="center",
             stretch=True
         )
+    def _load_table_rows(self, rowList:list) -> None:
+        self.tableview.delete_rows()
+        for list in rowList:
+            self.tableview.insert_row('end', list)
+        self.tableview.load_table_data()
 
     @abstractmethod
     def getButtonCommand(self, button_text):
@@ -126,7 +135,7 @@ class popup(ttk.window.Toplevel, ABC):
         self.frameList = [ttk.Frame(self, padding=10) for _ in range(entryFieldQty+2)]
         self.frameList[0].configure(padding=0, bootstyle="warning")
         self.stringVar = [ttk.StringVar() for _ in range(entryFieldQty)]
-        self.errVar = [ttk.StringVar() for _ in range(entryFieldQty)]
+        self.errVar = [ttk.StringVar() for _ in range(entryFieldQty + 1)]
         self.entries = []
         self.errLabels = []
 
@@ -145,13 +154,37 @@ class popup(ttk.window.Toplevel, ABC):
         label = ttk.Label(frame, text=label)
         label.grid(row=0, column=1, sticky="sw")
 
-    def create_entry(self, frame: ttk.Frame, stringVar: ttk.StringVar) -> None:
-        entry = ttk.Entry(master=frame, textvariable=stringVar)
+    def create_entry(self, frame: ttk.Frame, stringVar: ttk.StringVar, state = "enabled") -> None:
+        if state == "enabled":
+            entry = ttk.Entry(master=frame, textvariable=stringVar, state="enabled")
+        elif state == "readonly":
+            entry = ttk.Entry(master=frame, textvariable=stringVar, state="readonly")
+        else:
+            print(f"Entry field created with invalid state \nFrame: {frame}\nState: {state}")
+        #print(entry.cget("state"))
         entry.grid(row=1, column=1, sticky="we")
         self.entries += [entry]
 
-    def create_combobox(self, frame: ttk.Frame, stringVar: ttk.StringVar, options: list):
-        entry = ttk.Combobox(master=frame, textvariable=stringVar, values=options)
+    def create_spinbox(self, frame: ttk.Frame, stringVar: ttk.StringVar, state = "enabled", to=1000) -> None:
+        if state == "enabled":
+            entry = ttk.Spinbox(master=frame, textvariable=stringVar, state="enabled", increment=1, from_=0, to=to)
+        elif state == "readonly":
+            entry = ttk.Spinbox(master=frame, textvariable=stringVar, state="readonly", increment=1, from_=0, to=to)
+        else:
+            print(f"Spinbox field created with invalid state \nFrame: {frame}\nState: {state}")
+        #print(entry.cget("state"))
+        entry.grid(row=1, column=1, sticky="we")
+        self.entries += [entry]
+
+    def create_combobox(self, frame: ttk.Frame, stringVar: ttk.StringVar, options: list = [], state= "enabled", postcommand=None):
+        if state == "enabled":
+            #print(postcommand)
+            entry = ttk.Combobox(master=frame, textvariable=stringVar, values=options, postcommand=postcommand)
+        elif state == "readonly":
+            entry = ttk.Combobox(master=frame, textvariable=stringVar, values=options, state="readonly", postcommand=postcommand)
+        else:
+            print(f"Combobox created with invalid state \nFrame: {frame}\nState: {state}")
+
         entry.grid(row=1, column=1, sticky="we")
         self.entries += [entry]
 
@@ -160,29 +193,68 @@ class popup(ttk.window.Toplevel, ABC):
         errMsg.grid(row=2, column=1, sticky="nwe")
         self.errLabels += [errMsg]
 
-    def create_buttonbox(self, frame: ttk.Frame, command):
-        self.submitButton = ttk.Button(master=frame, text="Submit", command=lambda: command, bootstyle="success", state="disabled")
+    def create_buttonbox(self, frame: ttk.Frame):
+        #print(f"Function given: {command}")
+        self.submitButton = ttk.Button(master=frame, text="Submit", bootstyle="success", state="disabled")
         self.submitButton.focus_set()
         self.submitButton.grid(row=1, column=2, sticky="e")
 
         cnl_btn = ttk.Button(master=frame, text="Cancel", command=lambda: self.destroy(), bootstyle="danger")
         cnl_btn.grid(row=1, column=1, sticky="e")
 
+        errVar = ttk.StringVar()
+        self.errVar += [errVar]
+        errMsg = ttk.Label(master=frame, textvariable=errVar, foreground=ttk.style.Style.get_instance().theme.colors.get("danger"), font=self.font.get_font("error"))
+        errMsg.grid(row=2, column=0, columnspan=3, sticky="ne")
+
         frame.rowconfigure(1, weight=1)
+        frame.rowconfigure(2, weight=0)
         frame.columnconfigure(0, weight=20)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
 
-    def validateButton(self, key):
-        if validation.validateButton(self.submitButton, key, self.stringVar):
+    @staticmethod
+    def deleteDialog(parent:ttk.TTK_WIDGETS) -> str:
+        """Returns: 'OK' or 'Cancel' """
+        return Messagebox.okcancel(message="Action cannot be undone. Proceed to deletion?", title="Warning", parent=parent)
+
+    @staticmethod
+    def deleteFail(parent:ttk.TTK_WIDGETS) -> Messagebox.show_info:
+        return Messagebox.show_info(title="Info", message="Operation failed. There are likely linked data entries in the existing database.", parent=parent)
+
+    @staticmethod
+    def infoPopup(parent:ttk.TTK_WIDGETS, msg:str) -> Messagebox.show_info:
+        return Messagebox.show_info(title="Info", message=msg, parent=parent)
+
+    @staticmethod
+    def getTableRows(tableview:ttk.tableview) -> list:
+        try:
+            rowDetails = tableview.get_row(iid=tableview.view.focus()).values
+            return rowDetails
+        except:
+            ToastNotification(
+                title="Please select a table row",
+                message="Please select the details you would you like to operate on.",
+                duration=3000
+            ).show_toast()
+            return []
+
+    # Enables submit button if all entry fields are not greyed out
+    def validateButton(self):
+        if validation.validateButton(self.submitButton, self.stringVar, self.entries):
             self.submitButton.configure(state="enabled")
         else:
             self.submitButton.configure(state="disabled")
 
-    def traceButton(self, key: list):
-        for var in self.stringVar:
-            var.trace("w", lambda x, y, z: self.validateButton(key))
+    # Binds all entries to validateButon
+    def traceButton(self):
+        for entry in self.entries:
+            #print(f"Entry Traced: {entry}")
+            entry.bind("<FocusOut>", lambda event: self.validateButton(), add="+")
+            entry.bind("<KeyRelease>", lambda event: self.validateButton(), add="+")
+            entry.bind("<ButtonRelease>", lambda event: self.validateButton(), add="+")
 
+    # Binds enter to the next entry field
     def bind_entry_return(self):
         next_index = 1
         for index in range(1, len(self.entries)):
@@ -191,6 +263,7 @@ class popup(ttk.window.Toplevel, ABC):
         self.entries[-1].bind("<Return>", lambda event: self.submitButton.focus())
 
     def configure_frame(self, frame):
+        """Configure Entry Field frames only"""
         frame.rowconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
         frame.rowconfigure(2, weight=1)

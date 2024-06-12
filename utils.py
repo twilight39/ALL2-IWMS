@@ -5,6 +5,7 @@ import re
 import json
 
 from configuration import Configuration
+from Database.Database import DatabaseConnection
 
 def singleton(cls):
   """Decorator to create a singleton class."""
@@ -49,7 +50,14 @@ class previewText:
         widget.bind("<FocusOut>", lambda event: self.Populate_Text(event))
 
         # Initial Preview Population
-        widget.insert(0, self.previewText)
+        #print(f"Widget Called Preview Class: {widget}\nWidget State:{widget.cget('state')}\n")
+        if str(widget.cget("state")) == "readonly":
+            #print(f"{widget} found as readonly\nState={widget.cget('state')}")
+            widget.configure(state="enabled")
+            widget.insert(0, self.previewText)
+            widget.configure(state="readonly")
+        else:
+            widget.insert(0, self.previewText)
         widget.configure(foreground=self.styleObj.colors.get("secondary"))
 
     def Delete_Text(self, event):
@@ -62,6 +70,8 @@ class previewText:
         if event.widget.get() == "":
             event.widget.insert(0, self.previewText)
             event.widget.configure(foreground=self.styleObj.colors.get("secondary"))
+        elif event.widget.get() == self.previewText:
+            event.widget.configure(foreground=self.styleObj.colors.get("secondary"))
 
     @staticmethod
     def initText(key):
@@ -70,12 +80,15 @@ class previewText:
         return previewText
 
 
+
+
 # Implements Entry Field Validation
 class validation:
 
     def __init__(self):
 
         self.errText = {}
+        self.db_connection = DatabaseConnection()
 
         # Validation Type Dictionary
         self.validateType ={
@@ -83,13 +96,16 @@ class validation:
             "password" : validator(self.validatePassword),
             "string": validator(self.validateString),
             "price": validator(self.validatePrice),
-            "integer": validator(self.validateInteger)
-            #"vendor"
+            "integer": validator(self.validateInteger),
+            "vendor": validator(self.validateVendor),
+            "productNo": validator(self.validateProductNo),
+            "existingProductNo": validator(self.validateExistingProductNo),
+            "shipmentNo": validator(self.validateShipmentNo)
         }
 
     def validate(self, widget, key, errStringVar):
 
-        add_validation(widget, self.validateType[key], when='focusout')
+        add_validation(widget, self.validateType[key], when='focus')
         self.errText[widget] = errStringVar
 
     def validateEmail(self, event):
@@ -155,7 +171,7 @@ class validation:
             return True
 
         # Invalid: Contains Invalid Characters
-        if re.search("[^a-zA-Z0-9_\s-]", event.postchangetext) is not None:
+        if re.search("[^a-zA-Z0-9_\s\-,.']", event.postchangetext) is not None:
             self.errText[event.widget].set("Only alphanumeric characters allowed.")
             return False
 
@@ -194,14 +210,52 @@ class validation:
             self.errText[event.widget].set("Only integers are allowed.")
             return False
 
+    def validateVendor(self, event):
+        vendors = [f"{vendorID} - {name}" for vendorID, name in self.db_connection.query_vendor()]
+        if event.postchangetext in vendors:
+            self.errText[event.widget].set("")
+            return True
+
+        else:
+            self.errText[event.widget].set("Invalid Vendor")
+            return False
+
+    def validateProductNo(self, event):
+        if event.postchangetext in self.db_connection.query_productBatchNo():
+            self.errText[event.widget].set("Product No. already in use")
+            return False
+
+        elif re.match("^FUR-[A-Z]{3}-[A-Z]-[A-Z]{2}-[\d]{3}$", event.postchangetext):
+            self.errText[event.widget].set("")
+            return True
+
+        else:
+            self.errText[event.widget].set("Invalid Product No.; Example: [FUR-TBL-M-BR-001]")
+            return False
+
+    def validateExistingProductNo(self, event):
+        if event.postchangetext in self.db_connection.query_productBatchNo():
+            self.errText[event.widget].set("")
+            return True
+        else:
+            self.errText[event.widget].set("Invalid Product No.; Example: [FUR-TBL-M-BR-001]")
+            return False
+
+    def validateShipmentNo(self, event):
+        if re.match("^SHIP-[\d]{6}-[A-Z]+$", event.postchangetext):
+            self.errText[event.widget].set("")
+            return True
+
+        else:
+            self.errText[event.widget].set("Invalid Product No.; Example: [SHIP-240603-B]")
+            return False
+
     @staticmethod
-    def validateButton(button: ttk.Button, key: list, stringVarList: list) -> bool:
-        with open("ui_preview_text.json", "r") as f:
-            previewText = json.load(f)
-        for i, k in enumerate(key):
-            #print(previewText.get(k, ""))
-            #print(stringVarList[i].get())
-            if previewText.get(k, "") == stringVarList[i].get() or stringVarList[i].get() == "":
+    def validateButton(button: ttk.Button, stringVarList: list, entries: list) -> bool:
+        styleObj = ttk.style.Style.get_instance()
+        for index, value in enumerate(stringVarList):
+            if str(entries[index].cget("foreground")) == str(styleObj.colors.get("secondary")) or value.get() == "":
+                #print(f"Index {index}: {entries[index].cget('foreground')}")
                 button.configure(state="disabled")
                 return False
         return True

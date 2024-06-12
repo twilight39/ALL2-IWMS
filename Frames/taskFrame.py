@@ -20,6 +20,9 @@ class taskFrame(pageFrame):
         colNames = ["Task ID", "Employee Name", "Description", "Progress", "ETA"]
         self._insert_table_headings(colNames)
 
+        self.db_connection = DatabaseConnection()
+        self._load_table_rows(self.db_connection.query_task_table())
+
     def _insert_table_headings(self, colNames:list) -> None:
         for name in colNames:
             self._insert_table_columns(name)
@@ -56,7 +59,7 @@ class taskFrame(pageFrame):
             toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar=toplevel.stringVar[index])
         toplevel.create_combobox(frame=toplevel.frameList[3], stringVar=toplevel.stringVar[2], options=["Worker A", "Worker B"])
         toplevel.create_entry(frame=toplevel.frameList[4], stringVar=toplevel.stringVar[3])
-        toplevel.create_buttonbox(frame=toplevel.frameList[5], command=None)
+        toplevel.create_buttonbox(frame=toplevel.frameList[5])
 
         # Preview Text
         entryList =["taskDescriptionEntry", "employeeNameEntry", "etaEntry"]
@@ -70,7 +73,7 @@ class taskFrame(pageFrame):
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton(entryList)
+        toplevel.traceButton()
 
         # Configure Frames
         for index in range (1, 5):
@@ -170,8 +173,9 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    lFrame = navigationFrame(window)
     rFrame = taskFrame(window, "Administrator")
+    lFrame = navigationFrame(window, 1, rFrame)
+
     #rFrame.createPopup()
 
     # Starts Event Main Loop

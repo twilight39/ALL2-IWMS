@@ -1,6 +1,7 @@
 import ttkbootstrap.toast
 from Frames.pageFrame import *
-
+from Database.Database import DatabaseConnection
+from ttkbootstrap.validation import validator, add_validation
 
 class productFrame(pageFrame):
 
@@ -11,14 +12,16 @@ class productFrame(pageFrame):
                          title="Product",
                          role=role,
                          button_config={
-                             "Worker": ["Add", "Update"],
-                             "Supervisor": ["Add", "Update"],
-                             "Administrator": ["Create", "Add", "Update", "Delete"]
+                             "Supervisor": ["Create", "Update", "Delete"],
+                             "Administrator": ["Create", "Update", "Delete"]
                          })
 
         # Inserts Tableview columns
-        colNames = ["Product ID", "Name", "Description", "Quantity", "Location", "Serial Number ID"]
+        colNames = ["Product No", "Name", "Description", "Price", "Quantity", "Preferred Vendor"]
         self._insert_table_headings(colNames)
+
+        self.db_connection = DatabaseConnection()
+        self._load_table_rows(self.db_connection.query_product_table())
 
     def _insert_table_headings(self, colNames:list) -> None:
         for name in colNames:
@@ -28,141 +31,138 @@ class productFrame(pageFrame):
         if button_text == "Create":
             self.createPopup()
 
-        elif button_text == "Add":
-            self.addPopup()
-
         elif button_text == "Update":
             self.updatePopup()
 
         elif button_text == "Delete":
-            toast = ttkbootstrap.toast.ToastNotification(
-                title="Error",
-                message="Function is still under development :(",
-                duration=3000,
-            )
-            toast.show_toast()
+            self.deletePopup()
 
     def createPopup(self):
+        # Database Query
+        vendors = [f"{vendorID} - {vendorName}" for vendorID, vendorName in self.db_connection.query_vendor()]
 
         # Creates Popup
-        toplevel = popup(master=self.masterWindow, title="Create Product", entryFieldQty=4)
+        toplevel = popup(master=self.masterWindow, title="Create Product", entryFieldQty=5)
+
+        def onSubmitButton():
+            parameters = [i.get() for i in toplevel.stringVar]
+            parameters[-1] = parameters[-1].split(' - ')[0]
+            print(parameters)
+            if not self.db_connection.add_product(*parameters):
+                toplevel.errVar[-1].set("Submission failed to process")
+            else:
+                self._load_table_rows(self.db_connection.query_product_table())
+                toplevel.destroy()
+
 
         # Creates Widgets
         toplevel.create_title_frame(frame=toplevel.frameList[0], title="Create Product")
-        for index, key in enumerate(["Name", "Description", "Price (RM)", "Preferred Vendor"]):
-            toplevel.create_label(frame=toplevel.frameList[index+1], label=key)
-            toplevel.create_errMsg(frame=toplevel.frameList[index+1], errVar=toplevel.errVar[index])
-        for index in range(3):
-            toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar=toplevel.stringVar[index])
-        toplevel.create_combobox(frame=toplevel.frameList[4], stringVar=toplevel.stringVar[3], options=["N/A", "Company A", "Company B"])
-        toplevel.create_buttonbox(frame=toplevel.frameList[5], command=None)
-
-        # Preview Text
-        previewText(toplevel.entries[0], key="productNameEntry")
-        previewText(toplevel.entries[1], key="productDescriptionEntry")
-        previewText(toplevel.entries[2], key="priceEntry")
-        previewText(toplevel.entries[3], key="preferredVendorEntry")
-
-        # Validation
-        valObj = validation()
-        for index in [0, 1, 3]:
-            valObj.validate(widget=toplevel.entries[index], key="string", errStringVar=toplevel.errVar[index])
-        valObj.validate(widget=toplevel.entries[2], key="price", errStringVar=toplevel.errVar[2])
-
-        # Bindings
-        toplevel.bind_entry_return()
-        toplevel.traceButton(["productNameEntry", "productDescriptionEntry", "priceEntry", "preferredVendorEntry"])
-
-        # Configure Frames
-        for index in range (1, 5):
-            toplevel.configure_frame(frame=toplevel.frameList[index])
-
-        # Grid Frames
-        toplevel.configure_toplevel()
-
-    def addPopup(self):
-
-        # Creates Popup
-        toplevel = popup(master=self.masterWindow, title="Add Product", entryFieldQty=4)
-
-        # Creates Widgets
-        toplevel.create_title_frame(frame=toplevel.frameList[0], title="Add Product")
-        for index, key in enumerate(["ProductID", "Quantity", "Location", "Serial Number ID"]):
-            toplevel.create_label(frame=toplevel.frameList[index+1], label=key)
-            toplevel.create_errMsg(frame=toplevel.frameList[index+1], errVar=toplevel.errVar[index])
+        for index, key in enumerate(["Product No.", "Name", "Description", "Price (RM)", "Preferred Vendor"]):
+            toplevel.create_label(frame=toplevel.frameList[index + 1], label=key)
+            toplevel.create_errMsg(frame=toplevel.frameList[index + 1], errVar=toplevel.errVar[index])
         for index in range(4):
-            if index == 2:
-                toplevel.create_combobox(frame=toplevel.frameList[3], stringVar=toplevel.stringVar[2], options=["Retrieval", "Warehouse", "Packaging", "Delivery"])
-            else:
-                toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar=toplevel.stringVar[index])
-
-        toplevel.create_buttonbox(frame=toplevel.frameList[5], command=None)
+            toplevel.create_entry(frame=toplevel.frameList[index + 1], stringVar=toplevel.stringVar[index])
+        toplevel.create_combobox(frame=toplevel.frameList[5], stringVar=toplevel.stringVar[4], options=vendors)
+        toplevel.create_buttonbox(frame=toplevel.frameList[6])
+        toplevel.submitButton.configure(command= lambda: onSubmitButton())
 
         # Preview Text
-        previewText(toplevel.entries[0], key="productIDEntry")
-        previewText(toplevel.entries[1], key="quantityEntry")
-        previewText(toplevel.entries[2], key="locationEntry")
-        previewText(toplevel.entries[3], key="serialNumberIDEntry")
+        previewText(toplevel.entries[0], key="productNoEntry")
+        previewText(toplevel.entries[1], key="productNameEntry")
+        previewText(toplevel.entries[2], key="productDescriptionEntry")
+        previewText(toplevel.entries[3], key="priceEntry")
+        previewText(toplevel.entries[4], key="preferredVendorEntry")
 
         # Validation
         valObj = validation()
-        valObj.validate(widget=toplevel.entries[0], key="string", errStringVar=toplevel.errVar[0])
-        valObj.validate(widget=toplevel.entries[1], key="integer", errStringVar=toplevel.errVar[1])
-        # Custom database validation required for location and serial number
+        for index, key in enumerate(["productNo", "string", "string", "price", "vendor"]):
+            valObj.validate(widget=toplevel.entries[index], key=key, errStringVar=toplevel.errVar[index])
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton(["productIDEntry", "quantityEntry", "locationEntry", "serialNumberIDEntry"])
+        toplevel.traceButton()
 
         # Configure Frames
-        for index in range (1, 5):
+        for index in range(1, 6):
             toplevel.configure_frame(frame=toplevel.frameList[index])
 
         # Grid Frames
         toplevel.configure_toplevel()
 
     def updatePopup(self):
+        rowDetails = popup.getTableRows(self.tableview)
+        if rowDetails == []:
+            return
+        #print(rowDetails)
+
+        # Database Query
+        vendors = [f"{vendorID} - {vendorName}" for vendorID, vendorName in self.db_connection.query_vendor()]
+        rowDetails += [f"{ID[0]} - {rowDetails[-1]}" for ID in self.db_connection.query_vendor() if ID[1] == rowDetails[-1]]
+        rowDetails.pop(-2)
+        rowDetails.pop(-2)
 
         # Creates Popup
-        toplevel = popup(master=self.masterWindow, title="Update Product", entryFieldQty=3)
+        toplevel = popup(master=self.masterWindow, title="Update Product", entryFieldQty=5)
+
+        def onSubmitButton():
+            parameters = [i.get() for i in toplevel.stringVar]
+            parameters[-1] = int(parameters[-1].split(' - ')[0])
+            parameters[-2] = float(parameters[-2])
+            print(*parameters)
+            if not self.db_connection.update_product(*parameters):
+                toplevel.errVar[-1].set("Submission failed to process")
+            else:
+                self._load_table_rows(self.db_connection.query_product_table())
+                toplevel.destroy()
 
         # Creates Widgets
-        toplevel.create_title_frame(frame=toplevel.frameList[0], title="Update Product")
-        for index, key in enumerate([ "Quantity", "Location"]):
-            toplevel.create_label(frame=toplevel.frameList[index+1], label=key)
-            toplevel.create_errMsg(frame=toplevel.frameList[index+1], errVar=toplevel.errVar[index])
-        for index in range(2):
-            if index == 1:
-                toplevel.create_combobox(frame=toplevel.frameList[index+1], stringVar=toplevel.stringVar[index], options=["Retrieval", "Warehouse", "Packaging", "Delivery"])
-            else:
-                toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar=toplevel.stringVar[index])
-
-        toplevel.create_buttonbox(frame=toplevel.frameList[3], command=None)
+        toplevel.create_title_frame(frame=toplevel.frameList[0], title="Create Product")
+        for index, key in enumerate(["Product No.", "Name", "Description", "Price (RM)", "Preferred Vendor"]):
+            toplevel.create_label(frame=toplevel.frameList[index + 1], label=key)
+            toplevel.create_errMsg(frame=toplevel.frameList[index + 1], errVar=toplevel.errVar[index])
+        for index in range(4):
+            toplevel.create_entry(frame=toplevel.frameList[index + 1], stringVar=toplevel.stringVar[index])
+        toplevel.create_combobox(frame=toplevel.frameList[5], stringVar=toplevel.stringVar[4], options=vendors)
+        toplevel.create_buttonbox(frame=toplevel.frameList[6])
+        toplevel.submitButton.configure(command= lambda: onSubmitButton())
 
         # Preview Text
-        previewText(toplevel.entries[0], key="quantityEntry")
-        previewText(toplevel.entries[1], key="locationEntry")
+        previewText(toplevel.entries[0], key="productNoEntry")
+        previewText(toplevel.entries[1], key="productNameEntry")
+        previewText(toplevel.entries[2], key="productDescriptionEntry")
+        previewText(toplevel.entries[3], key="priceEntry")
+        previewText(toplevel.entries[4], key="preferredVendorEntry")
+
+        for index, value in enumerate(rowDetails):
+            toplevel.stringVar[index].set(value)
+            toplevel.entries[index].configure(foreground="black")
 
         # Validation
         valObj = validation()
-        valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
-        valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
-        # Custom database validation required for location and quantity
+        for index, key in enumerate(["productNo", "string", "string", "price", "vendor"]):
+            valObj.validate(widget=toplevel.entries[index], key=key, errStringVar=toplevel.errVar[index])
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton(["quantityEntry", "locationEntry"])
+        toplevel.traceButton()
 
         # Configure Frames
-        for index in range (1, 3):
+        for index in range(1, 6):
             toplevel.configure_frame(frame=toplevel.frameList[index])
 
         # Grid Frames
         toplevel.configure_toplevel()
 
+    def deletePopup(self):
+        rowDetails = popup.getTableRows(self.tableview)
+        if rowDetails == []:
+            return
+        if popup.deleteDialog(self) == "OK":
+            if self.db_connection.delete_product(rowDetails[0]):
+                self._load_table_rows(self.db_connection.query_product_table())
+            else:
+                popup.deleteFail(self)
 
-
-# Test Case
 if __name__ == "__main__":
     from navigationFrame import navigationFrame
 
@@ -174,8 +174,8 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    lFrame = navigationFrame(window)
-    rFrame = productFrame(window, "Administrator")
+    rFrame = productFrame(window, "Supervisor")
+    lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 
     # Starts Event Main Loop
