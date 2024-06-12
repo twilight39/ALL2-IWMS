@@ -2,7 +2,7 @@ from Frames.Login import Login
 from Frames.navigationFrame import navigationFrame
 from Frames.notificationFrame import notificationFrame
 from Frames.pageFrame import pageFrame
-from Frames.productFrame import productFrame
+from Frames.inventoryFrame import inventoryFrame
 from Frames.purchaseOrderFrame import purchaseOrderFrame
 from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame

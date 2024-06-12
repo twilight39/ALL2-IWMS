@@ -1,5 +1,6 @@
 import os
 from Database import DatabaseConnection, authentication
+from datetime import date
 
 def populateTestTable(db_connection:DatabaseConnection):
     auth = authentication()
@@ -19,9 +20,9 @@ def populateTestTable(db_connection:DatabaseConnection):
         )
 
     for name, contactNumber, email in [
-        ["Techtronics Inc.", "123-456-7890", "sales@techtronics.com"],
-        ["FitGear", "987-654-3210", "info@fitgear.com"],
-        ["Gear & Bags", "555-123-4567", "orders@gearandbags.com"]
+        ["Techtronics Inc.", "sales@techtronics.com", "1234567890"],
+        ["FitGear", "info@fitgear.com", "9876543210"],
+        ["Gear & Bags", "orders@gearandbags.com", "5551234567"]
     ]:
         db_connection.add_vendor(name, contactNumber, email)
     print(db_connection.query_vendor())
@@ -32,7 +33,7 @@ def populateTestTable(db_connection:DatabaseConnection):
         ["Review code for pull request", "2024-05-27", 3, None]
     ]:
         db_connection.add_task(description, eta, workerID, batchID)
-    print(db_connection.query_tasks())
+    print(db_connection.query_task_table())
 
     db_connection.add_taskBatch("Batch 1", [1,2])
     db_connection.add_taskBatch("Batch 2", [3])
@@ -40,39 +41,39 @@ def populateTestTable(db_connection:DatabaseConnection):
     db_connection.update_taskBatch(1, "Super Space Soup Rare", [1,3], 2)
     print(db_connection.query_taskBatch())
 
-    for id in ["240524-A", "240526-A", "240526-B"]:
-        db_connection.add_productBatch(id)
-
-    for name, description, price, supplierID in [
-        ["Executive Office Chair", "Ergonomic chair with adjustable features", 349.99, 3],
-        ["Wooden Dining Table", "Sturdy table for 6 people", 299.99, 1],
-        ["Mesh Office Chair", "Breathable chair ideal for long work hours", 199.99, 3],
-        ["Bar Stool (Set of 2)", "Adjustable stools with padded seats", 149.99, 2],
-        ["Sofa Bed", "Convertible sofa that folds out to a bed", 499.99, 3]
+    for no, name, description, price, supplierID in [
+        ["FUR-CHR-M-BR-001","Executive Office Chair", "Ergonomic chair with adjustable features", 349.99, 3],
+        ["FUR-TBL-M-BR-001","Wooden Dining Table", "Sturdy table for 6 people", 299.99, 1],
+        ["FUR-CHR-M-BL-001","Mesh Office Chair", "Breathable chair ideal for long work hours", 199.99, 3],
+        ["FUR-CHR-M-BL-002","Bar Stool (Set of 2)", "Adjustable stools with padded seats", 149.99, 2],
+        ["FUR-SOF-L-GR-001","Sofa Bed", "Convertible sofa that folds out to a bed", 499.99, 3]
     ]:
-        db_connection.add_product(name, description ,price, supplierID)
+        db_connection.add_product(no, name, description, price, supplierID)
 
-    for productID, batchID, quantity in [
-        [1, 1, 20],
-        [2, 2, 50],
-        [3, 2, 40]
-    ]:
-        db_connection.receive_product(productID, batchID, quantity)
-
-    db_connection.update_product(2, 2, 1, 3, 15)
-    db_connection.update_product(3, 2, 1, 4, 23)
-
-    db_connection.add_purchaseOrder(2, 30, 1, 2)
-    db_connection.add_purchaseOrder(3, 15, 2, 1)
-    db_connection.add_purchaseOrder(1, 2, 3, 1)
-    db_connection.delete_purchaseOrder(3)
+    db_connection.add_purchaseOrder(1, 30, 1, "BATCH-240526-A")
+    db_connection.add_purchaseOrder(3, 15, 2, "BATCH-240524-A")
+    db_connection.add_purchaseOrder(2, 2, 3, "BATCH-240524-A")
+    db_connection.add_purchaseOrder(5, 34, 2, "BATCH-240527-A")
+    db_connection.delete_purchaseOrder("SHIP-240602-C")
     print(db_connection.query_purchaseOrder())
 
-    db_connection.add_salesOrder(1, 1, 34)
-    db_connection.add_salesOrder(2, 3, 19)
-    db_connection.add_salesOrder(3, 2, 13)
-    db_connection.update_salesOrder(1, 4, 2, 20)
-    print(db_connection.query_salesOrder())
+    for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B"]]:
+        #print(number)
+        db_connection.receive_inventory(number)
+
+    db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 3, 15)
+    db_connection.update_inventory("FUR-CHR-M-BL-001", "BATCH-240524-A", 1, 3, 8)
+
+    #for productID, quantity in [[1, 20], [3, 10], [5, 3]]:
+    #    db_connection.create_salesOrder(productID, quantity)
+
+    #for saleNo, productNo, quantity in [
+    #    [f"SALE-{date.today().strftime('%y%m%d')}-A", "FUR-CHR-M-BR-001", 20],
+    #    [f"SALE-{date.today().strftime('%y%m%d')}-B", "FUR-CHR-M-BL-001", 10],
+    #    [f"SALE-{date.today().strftime('%y%m%d')}-C", "FUR-SOF-L-GR-001", 3]
+    #]:
+    #    db_connection.add_salesOrder(saleNo,productNo,quantity)
+    #print(db_connection.query_salesOrder_table())
 
     db_connection.add_notification(1, "Admin only noti")
     db_connection.add_notification(2, "Supervisor noti")
@@ -125,6 +126,7 @@ if __name__ == "__main__":
         pass
     con = DatabaseConnection()
     populateTestTable(con)
+    #con.add_product("Test Product", "TEeeest", 20, "2 - Something")
     #print(con.query_vendor())
 
     #authTest()

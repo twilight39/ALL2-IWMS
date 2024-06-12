@@ -1,6 +1,6 @@
 import ttkbootstrap as ttk
 from Frames import *
-from Frames.productFrame import productFrame
+from Frames.inventoryFrame import inventoryFrame
 
 def main():
 
@@ -11,14 +11,14 @@ def main():
     # Creates Login Object
     def onLogin(loginInstance:ttk.Frame, employeeID:int):
         loginInstance.destroy()
-        rFrame=productFrame(window, "Administrator")
+        rFrame=inventoryFrame(window, "Administrator")
         lFrame=navigationFrame(window, employeeID, rFrame)
         window.rowconfigure(0, weight=1)
         window.columnconfigure(0, weight=1, minsize=200)
         window.columnconfigure(1, weight=20)
 
     instance = Login(window, onLogin_callback=onLogin)
-    onLogin(instance, 1)
+    #onLogin(instance, 1)
 
     # Starts Event Main Loop
     window.mainloop()

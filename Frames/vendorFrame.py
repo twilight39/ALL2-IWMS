@@ -1,5 +1,8 @@
 import ttkbootstrap.toast
 from Frames.pageFrame import *
+from Database.Database import DatabaseConnection
+from ttkbootstrap.dialogs import Messagebox
+
 
 class vendorFrame(pageFrame):
 
@@ -18,6 +21,9 @@ class vendorFrame(pageFrame):
         colNames = ["Vendor ID", "Vendor Name", "Email", "Contact Number"]
         self._insert_table_headings(colNames)
 
+        self.db_connection = DatabaseConnection()
+        self._load_table_rows(self.db_connection.query_vendor_all())
+
     def _insert_table_headings(self, colNames:list) -> None:
         for name in colNames:
             self._insert_table_columns(name)
@@ -30,17 +36,19 @@ class vendorFrame(pageFrame):
             self.updatePopup()
 
         elif button_text == "Delete":
-            toast = ttkbootstrap.toast.ToastNotification(
-                title="Error",
-                message="Function is still under development :(",
-                duration=3000,
-            )
-            toast.show_toast()
+            self.deletePopup()
 
     def addPopup(self):
 
         # Creates Popup
         toplevel = popup(master=self.masterWindow, title="Add Vendor", entryFieldQty=4)
+
+        def onButtonPress():
+            if not self.db_connection.add_vendor(toplevel.stringVar[1].get(), toplevel.stringVar[2].get(), toplevel.stringVar[3].get()):
+                toplevel.errVar[3].set("Submission failed to process")
+            else:
+                self._load_table_rows(self.db_connection.query_vendor_all())
+                toplevel.destroy()
 
         # Creates Widgets
         toplevel.create_title_frame(frame=toplevel.frameList[0], title="Add Vendor")
@@ -48,7 +56,13 @@ class vendorFrame(pageFrame):
             toplevel.create_label(frame=toplevel.frameList[index+1], label=key)
             toplevel.create_errMsg(frame=toplevel.frameList[index+1], errVar=toplevel.errVar[index])
             toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar= toplevel.stringVar[index])
-        toplevel.create_buttonbox(frame=toplevel.frameList[5], command=None)
+        toplevel.create_buttonbox(frame=toplevel.frameList[5])
+        toplevel.submitButton.configure(command= lambda: onButtonPress())
+
+        vendorID = self.db_connection.query_vendor()[-1][0] + 1
+        #print(vendorID)
+        toplevel.entries[0].configure(state="readonly")
+        toplevel.stringVar[0].set(str(vendorID))
 
         # Preview Text
         entryList =["vendorNameEntry", "emailEntry", "contactNumberEntry"]
@@ -64,7 +78,7 @@ class vendorFrame(pageFrame):
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton(entryList)
+        toplevel.traceButton()
 
         # Configure Frames
         for index in range (1, 5):
@@ -74,6 +88,18 @@ class vendorFrame(pageFrame):
         toplevel.configure_toplevel()
 
     def updatePopup(self):
+        rowDetails = popup.getTableRows(self.tableview)
+        if rowDetails == []:
+            return
+        def onButtonPress():
+            parameters = []
+            for i in [0,1,3,2]:
+                parameters+= [toplevel.stringVar[i].get()]
+            if not self.db_connection.update_vendor(*parameters):
+                toplevel.errVar[4].set("Submission failed to process")
+            else:
+                self._load_table_rows(self.db_connection.query_vendor_all())
+                toplevel.destroy()
 
         # Creates Popup
         toplevel = popup(master=self.masterWindow, title="Update Vendor", entryFieldQty=4)
@@ -84,12 +110,18 @@ class vendorFrame(pageFrame):
             toplevel.create_label(frame=toplevel.frameList[index+1], label=key)
             toplevel.create_errMsg(frame=toplevel.frameList[index+1], errVar=toplevel.errVar[index])
             toplevel.create_entry(frame=toplevel.frameList[index+1], stringVar= toplevel.stringVar[index])
-        toplevel.create_buttonbox(frame=toplevel.frameList[5], command=None)
+        toplevel.create_buttonbox(frame=toplevel.frameList[5])
+        toplevel.submitButton.configure(command= lambda : onButtonPress())
 
         # Preview Text
         entryList =["vendorNameEntry", "emailEntry", "contactNumberEntry"]
         for index, value in enumerate(entryList):
             previewText(toplevel.entries[index+1], key=value)
+
+        toplevel.entries[0].configure(state="disabled")
+        for index, value in enumerate(rowDetails):
+            toplevel.entries[index].configure(foreground="black")
+            toplevel.stringVar[index].set(value)
 
         # Validation
         valObj = validation()
@@ -100,7 +132,7 @@ class vendorFrame(pageFrame):
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton(entryList)
+        toplevel.traceButton()
 
         # Configure Frames
         for index in range (1, 5):
@@ -109,8 +141,15 @@ class vendorFrame(pageFrame):
         # Grid Frames
         toplevel.configure_toplevel()
 
-
-
+    def deletePopup(self):
+        rowDetails = popup.getTableRows(self.tableview)
+        if rowDetails == []:
+            return
+        if popup.deleteDialog(self) == "OK":
+            if self.db_connection.delete_vendor(rowDetails[0]):
+                self._load_table_rows(self.db_connection.query_vendor_all())
+            else:
+                popup.deleteFail(self)
 
 # Test Case
 if __name__ == "__main__":
@@ -124,8 +163,8 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    lFrame = navigationFrame(window)
     rFrame = vendorFrame(window, "Administrator")
+    lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 
     # Starts Event Main Loop
