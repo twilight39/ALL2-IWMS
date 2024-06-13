@@ -165,6 +165,19 @@ class popup(ttk.window.Toplevel, ABC):
         entry.grid(row=1, column=1, sticky="we")
         self.entries += [entry]
 
+    def create_dateEntry(self, frame: ttk.Frame, stringVar: ttk.StringVar, state = "enabled") -> None:
+        if state == "enabled":
+            entry = ttk.DateEntry(master=frame, dateformat=r"%Y-%m-%d",firstweekday=0)
+            entry.entry.configure(textvariable=stringVar, state="enabled")
+        elif state == "readonly":
+            entry = ttk.DateEntry(master=frame, dateformat=r"%Y-%m-%d",firstweekday=0)
+            entry.entry.configure(textvariable=stringVar, state="readonly")
+        else:
+            print(f"Entry field created with invalid state \nFrame: {frame}\nState: {state}")
+        #print(entry.cget("state"))
+        entry.grid(row=1, column=1, sticky="we")
+        self.entries += [entry.entry]
+
     def create_spinbox(self, frame: ttk.Frame, stringVar: ttk.StringVar, state = "enabled", to=1000) -> None:
         if state == "enabled":
             entry = ttk.Spinbox(master=frame, textvariable=stringVar, state="enabled", increment=1, from_=0, to=to)

@@ -285,8 +285,8 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = inventoryFrame(window, "Administrator")
-    lFrame = navigationFrame(window, 1, rFrame)
+    rFrame = inventoryFrame(window, "Worker")
+    lFrame = navigationFrame(window, 3, rFrame)
     #rFrame.createPopup()
 
     # Starts Event Main Loop

@@ -35,8 +35,8 @@ def populateTestTable(db_connection:DatabaseConnection):
         db_connection.add_task(description, eta, workerID, batchID)
     print(db_connection.query_task_table())
 
-    db_connection.add_taskBatch("Batch 1", [1,2])
-    db_connection.add_taskBatch("Batch 2", [3])
+    db_connection.add_taskBatch("Batch 1", "TASK-240611-A",[1,2])
+    db_connection.add_taskBatch("Batch 2", "TASK-240611-B",[3])
     db_connection.delete_taskBatch(2)
     db_connection.update_taskBatch(1, "Super Space Soup Rare", [1,3], 2)
     print(db_connection.query_taskBatch())

@@ -174,7 +174,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = productFrame(window, "Supervisor")
+    rFrame = productFrame(window, "1")
     lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 

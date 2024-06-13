@@ -11,14 +11,15 @@ def main():
     # Creates Login Object
     def onLogin(loginInstance:ttk.Frame, employeeID:int):
         loginInstance.destroy()
-        rFrame=inventoryFrame(window, "Administrator")
-        lFrame=navigationFrame(window, employeeID, rFrame)
+        #rFrame=inventoryFrame(window, "Administrator")
+        lFrame=navigationFrame(window, employeeID, ttk.Frame())
+        lFrame.getButtonCommand("Inventory")
         window.rowconfigure(0, weight=1)
         window.columnconfigure(0, weight=1, minsize=200)
         window.columnconfigure(1, weight=20)
 
     instance = Login(window, onLogin_callback=onLogin)
-    #onLogin(instance, 1)
+    onLogin(instance, 3)
 
     # Starts Event Main Loop
     window.mainloop()

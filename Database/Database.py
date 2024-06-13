@@ -55,6 +55,11 @@ class DatabaseConnection:
                             (employeeID, ))
         return self.cursor.fetchone()
 
+    def query_worker(self) -> tuple[str, ...]:
+        """Returns: Worker Names"""
+        self.cursor.execute("""SELECT WorkerID || ' - ' || Name FROM Workers WHERE RoleID = 3""")
+        return self.cursor.fetchall()[0]
+
     def query_notification(self, employeeID:int) -> list:
         try:
             self.cursor.execute("SELECT RoleID FROM Workers WHERE WorkerID = ?", (employeeID,))
@@ -422,18 +427,36 @@ class DatabaseConnection:
 
     def query_task_table(self) -> list:
         self.cursor.execute("""
-            SELECT TaskID, Workers.Name, TaskDesc, TaskStatus, ETA
-            FROM Tasks
-            INNER JOIN Workers ON Tasks.WorkerID = Workers.WorkerID
+            SELECT TaskID, COALESCE(Task_Batch.TBatchNo, 'Not Assigned'), COALESCE(Workers.Name, 'Not Assigned'), 
+            TaskDesc, TaskStatus, ETA
+            FROM Tasks LEFT JOIN Task_Batch ON Tasks.TBatchID = Task_Batch.TBatchID
+            LEFT JOIN Workers ON Tasks.WorkerID = Workers.WorkerID
         """)
         return self.cursor.fetchall()
 
-    def add_task(self, description: str, eta: str, worker_id: int = None, batch_id: int = None) -> bool:
+    def query_task_updatable(self) -> list[str]:
+        """Returns: [Task ID - Task Description, Assigned Employee, Progress, ETA] where Status is not 'Completed'"""
+        self.cursor.execute('''SELECT TaskID || ' - ' || TaskDesc, COALESCE(Task_Batch.TBatchNo, 'Not Assigned'), 
+                COALESCE(Workers.WorkerID || ' - ' || Workers.Name, 'Not Assigned'), TaskStatus,  ETA
+                FROM Tasks LEFT JOIN Task_Batch ON Tasks.TBatchID = Task_Batch.TBatchID
+                LEFT JOIN Workers ON Tasks.WorkerID = Workers.WorkerID
+                WHERE TaskStatus != "Completed"''')
+        return  self.cursor.fetchall()
+
+    def add_task(self, description: str, eta: str, worker_id: int, batch_id: int = None) -> bool:
         try:
-            self.cursor.execute("""
-                INSERT INTO Tasks (TaskDesc, WorkerID, ETA, TaskStatus, TBatchID)
-                VALUES (?, ?, ?, 'Not Started', ?)
-            """, (description, worker_id, eta, batch_id))
+            print(worker_id)
+            if re.match(r'\d+', str(worker_id)) is not None:
+                print("1")
+                self.cursor.execute("""
+                     INSERT INTO Tasks (TaskDesc, WorkerID, ETA, TaskStatus, TBatchID)
+                    VALUES (?, ?, ?, 'Not Started', ?)
+                 """, (description, worker_id, eta, batch_id))
+            else:
+                print("2")
+                self.cursor.execute("""
+                INSERT INTO Tasks (TaskDesc, ETA, TaskStatus, TBatchID)
+                VALUES (?, ?, 'Not Started', ?)""", (description, eta, batch_id))
             self.connection.commit()
             return True
 
@@ -441,13 +464,23 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return False
 
-    def update_task(self, task_id:int, description:str, worker_id:int, progress:str, eta:str, batch_id: int = None) -> bool:
+    def update_task(self, task_id:int, description:str, worker_id:int, progress:str, eta:str, batch_no: str = None) -> (
+            bool):
         try:
-            self.cursor.execute("""
-                UPDATE Tasks
-                SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?, TBatchID =?
-                WHERE TaskID = ?
-            """, (description, worker_id, progress, eta, batch_id,task_id))
+            self.cursor.execute("""SELECT TBatchID FROM Task_Batch WHERE TBatchNo = ?""", (batch_no,))
+            batch_id = self.cursor.fetchone()[0]
+            if batch_id is not None:
+                self.cursor.execute("""
+                    UPDATE Tasks
+                    SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?, TBatchID = ?
+                    WHERE TaskID = ?
+                """, (description, worker_id, progress, eta, batch_id, task_id,))
+            else:
+                self.cursor.execute("""
+                                    UPDATE Tasks
+                                    SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?
+                                    WHERE TaskID = ?
+                                """, (description, worker_id, progress, eta, task_id,))
             self.connection.commit()
             return True
 
@@ -465,16 +498,16 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return False
 
-    def query_taskBatch(self) -> list:
+    def query_taskBatch(self) -> list[str]:
         try:
-            self.cursor.execute("SELECT TBatchID, TBatchDesc FROM Task_Batch")
-            return self.cursor.fetchall()
+            self.cursor.execute("SELECT TBatchNo || ' - ' || TBatchDesc FROM Task_Batch")
+            return [value[0] for value in self.cursor.fetchall()]
         except sqlite3.Error:
             return []
 
-    def add_taskBatch(self, batchDesc:str, taskIDs: list) -> bool:
+    def add_taskBatch(self, batchDesc:str, batchNo: str,taskIDs: list) -> bool:
         try:
-            self.cursor.execute("INSERT INTO Task_Batch (TBatchDesc) VALUES (?)", (batchDesc,))
+            self.cursor.execute("INSERT INTO Task_Batch (TBatchNo, TBatchDesc) VALUES (?, ?)", (batchNo, batchDesc,))
             self.cursor.execute("SELECT TBatchID FROM Task_Batch WHERE TBatchDesc = ?", (batchDesc, ))
             batchID = self.cursor.fetchone()[0]
             for i in taskIDs:
@@ -965,6 +998,7 @@ class DatabaseConnection:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Task_Batch (
             TBatchID INTEGER PRIMARY KEY AUTOINCREMENT,
+            TBatchNo TEXT UNIQUE,
             TBatchDesc TEXT);
             ''')
 
@@ -1197,4 +1231,6 @@ if __name__ == "__main__":
     #print(con.update_salesOrder('SALE-240610-A', 'FUR-CHR-M-BR-001', 'BATCH-240526-A', 7))
     #print(con.query_salesOrder_productBatch('FUR-CHR-M-BR-001'))
     #con.validate_salesOrder_delivery('SALE-240612-A')
-    con.update_salesOrder_delivery('SALE-240612-A')
+    #con.update_salesOrder_delivery('SALE-240612-A')
+    print(con.query_taskBatch())
+    con.update_task(3, 'Review code for pull request', 2, 'In Progress', '2024-05-27', 'TASK-240611-A')
