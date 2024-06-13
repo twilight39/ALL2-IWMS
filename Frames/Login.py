@@ -105,7 +105,7 @@ class Login(tkinter.Canvas):
         print(self.textVariables["password"].get())
         if self.auth.authenticate(self.textVariables["email"].get(), self.textVariables["password"].get()):
             print("success")
-            self.onLogin_callback(self, 1)
+            self.onLogin_callback(self, self.textVariables["email"].get())
         else:
             self.itemconfigure(self.canvasObjIDs["buttonErrorID"], text="Invalid Email or Password")
             print("fail")

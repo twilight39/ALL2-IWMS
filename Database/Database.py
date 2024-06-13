@@ -55,6 +55,11 @@ class DatabaseConnection:
                             (employeeID, ))
         return self.cursor.fetchone()
 
+    def query_employee_login(self, email: str) -> int:
+        self.cursor.execute("""SELECT w.WorkerID FROM Workers w
+        INNER JOIN Accounts a ON w.WorkerID = a.WorkerID WHERE a.Email = ?""", (email,))
+        return self.cursor.fetchone()[0]
+
     def query_worker(self) -> tuple[str, ...]:
         """Returns: Worker Names"""
         self.cursor.execute("""SELECT WorkerID || ' - ' || Name FROM Workers WHERE RoleID = 3""")
@@ -468,7 +473,10 @@ class DatabaseConnection:
             bool):
         try:
             self.cursor.execute("""SELECT TBatchID FROM Task_Batch WHERE TBatchNo = ?""", (batch_no,))
-            batch_id = self.cursor.fetchone()[0]
+            try:
+                batch_id = self.cursor.fetchone()[0]
+            except:
+                batch_id = None
             if batch_id is not None:
                 self.cursor.execute("""
                     UPDATE Tasks

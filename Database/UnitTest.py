@@ -6,8 +6,8 @@ def populateTestTable(db_connection:DatabaseConnection):
     auth = authentication()
     for name, roleID, contactNumber, email, password in [
         ["John Doe", 2, "123-456-7890", "john@example.com", "JohnIsDumb"],
-        ["Bob Johnson", 3, "444-789-0123" ,"bob.johnson@company.com", "BobTheBuilder"],
-        ["Charlie Williams", 2, "333-567-8901" ,"charlie.williams@company.com", "KingCharlesTheSecond"]
+        ["Bob Johnson", 3, "444-789-0123" ,"bob.johnson@company.com", "BobTheBuilder0"],
+        ["Charlie Williams", 2, "333-567-8901" ,"charlie.williams@company.com", "KingCharlesTheSecond0"]
     ]:
         auth.createAccount(
             adminID= 1,

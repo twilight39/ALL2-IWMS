@@ -1,6 +1,7 @@
 import ttkbootstrap as ttk
 from Frames import *
 from Frames.inventoryFrame import inventoryFrame
+from Database.Database import DatabaseConnection
 
 def main():
 
@@ -9,9 +10,11 @@ def main():
     ttk.window.Window.place_window_center(window)
 
     # Creates Login Object
-    def onLogin(loginInstance:ttk.Frame, employeeID:int):
+    def onLogin(loginInstance:ttk.Frame, email: str) -> None:
         loginInstance.destroy()
         #rFrame=inventoryFrame(window, "Administrator")
+        db_connection = DatabaseConnection()
+        employeeID = db_connection.query_employee_login(email)
         lFrame=navigationFrame(window, employeeID, ttk.Frame())
         lFrame.getButtonCommand("Inventory")
         window.rowconfigure(0, weight=1)
@@ -19,7 +22,7 @@ def main():
         window.columnconfigure(1, weight=20)
 
     instance = Login(window, onLogin_callback=onLogin)
-    onLogin(instance, 3)
+    #onLogin(instance, 3)
 
     # Starts Event Main Loop
     window.mainloop()
