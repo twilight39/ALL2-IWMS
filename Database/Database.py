@@ -60,10 +60,10 @@ class DatabaseConnection:
         INNER JOIN Accounts a ON w.WorkerID = a.WorkerID WHERE a.Email = ?""", (email,))
         return self.cursor.fetchone()[0]
 
-    def query_worker(self) -> tuple[str, ...]:
+    def query_worker(self) -> list[str]:
         """Returns: Worker Names"""
         self.cursor.execute("""SELECT WorkerID || ' - ' || Name FROM Workers WHERE RoleID = 3""")
-        return self.cursor.fetchall()[0]
+        return [value for value in self.cursor.fetchall()[0]]
 
     def query_notification(self, employeeID:int) -> list:
         try:
@@ -486,7 +486,7 @@ class DatabaseConnection:
             else:
                 self.cursor.execute("""
                                     UPDATE Tasks
-                                    SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?
+                                    SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?, TBatchID = NULL
                                     WHERE TaskID = ?
                                 """, (description, worker_id, progress, eta, task_id,))
             self.connection.commit()
@@ -507,6 +507,7 @@ class DatabaseConnection:
             return False
 
     def query_taskBatch(self) -> list[str]:
+        """Returns: [Task Batch - Task Description]"""
         try:
             self.cursor.execute("SELECT TBatchNo || ' - ' || TBatchDesc FROM Task_Batch")
             return [value[0] for value in self.cursor.fetchall()]
@@ -530,10 +531,12 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return False
 
-    def update_taskBatch(self, batchID: int, batchDesc:str = "", taskIDs: list = [], employeeID:int = 0) -> bool:
+    def update_taskBatch(self, batchNo: str, batchDesc:str = "", taskIDs: list = [], employeeID:int = 0) -> bool:
         try:
-            if batchDesc != "":
-                self.cursor.execute("UPDATE Task_Batch SET TBatchDesc = ? WHERE TBatchID = ?", (batchDesc, batchID,))
+            self.cursor.execute("""SELECT TBatchID FROM Task_Batch WHERE TBatchNo = ?""", (batchNo,))
+            batchID=self.cursor.fetchone()[0]
+
+            self.cursor.execute("UPDATE Task_Batch SET TBatchDesc = ? WHERE TBatchID = ?", (batchDesc, batchID,))
 
             if taskIDs:
                 self.cursor.execute("UPDATE Tasks SET TBatchID = NULL WHERE TBatchID = ?", (batchID,))
@@ -545,6 +548,10 @@ class DatabaseConnection:
 
             self.connection.commit()
             return True
+
+        except TypeError:
+            print("type error, python's best friend")
+            return False
 
         except sqlite3.Error as err:
             print(f"Error: {err}")
@@ -1240,5 +1247,6 @@ if __name__ == "__main__":
     #print(con.query_salesOrder_productBatch('FUR-CHR-M-BR-001'))
     #con.validate_salesOrder_delivery('SALE-240612-A')
     #con.update_salesOrder_delivery('SALE-240612-A')
-    print(con.query_taskBatch())
-    con.update_task(3, 'Review code for pull request', 2, 'In Progress', '2024-05-27', 'TASK-240611-A')
+    #print(con.query_taskBatch())
+    #con.update_task(3, 'Review code for pull request', 2, 'In Progress', '2024-05-27', 'TASK-240611-A')
+    print(con.query_worker())

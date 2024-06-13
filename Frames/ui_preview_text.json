@@ -12,7 +12,7 @@
   "serialNumberIDEntry": "YYMM-00001",
   "customerIDEntry": "Customer ID - Customer Name",
   "saleIDEntry": "Sales ID",
-  "taskDescriptionEntry": "Move X of product Y from location Z to Packaging.",
+  "taskDescriptionEntry": "Task Description",
   "employeeNameEntry": "Employee Name",
   "etaEntry": "2024-06-13",
   "progressEntry": "Work Progress",
@@ -26,5 +26,6 @@
   "saleNoEntry" : "SALE-000000-A",
   "dateEntry": "YYYY-MM-DD",
   "taskEntry": "0 - Task Description",
-  "taskBatchEntry": "TASK-000000-[A-Z]"
+  "taskBatchEntry": "TASK-000000-[A-Z]",
+  "batchDescriptionEntry": "Batch Description"
 }

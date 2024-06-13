@@ -127,7 +127,7 @@ class taskFrame(pageFrame):
                 for i in range(1, 5):
                     toplevel.stringVar[i].set(details[i])
                 toplevel.entries[1].configure(state='enabled', foreground="black",
-                                              value=self.db_connection.query_taskBatch())
+                                              value=['Not Assigned'] + self.db_connection.query_taskBatch())
                 toplevel.entries[2].configure(state='enabled', value=self.db_connection.query_worker(),
                                               foreground="black")
                 toplevel.entries[3].configure(state='enabled', value=['Not Started', 'In Progress', 'Completed'],
@@ -195,31 +195,108 @@ class taskFrame(pageFrame):
 
     def batchPopup(self):
 
+        def onSubmitButton():
+            tasks = []
+            for i in [2, 3, 4, 5]:
+                if toplevel.entries[i].cget("state") == "enabled":
+                    tasks += [toplevel.stringVar[i].get().split(' - ')[0]]
+            if not self.db_connection.update_taskBatch(
+                    batchNo=toplevel.stringVar[0].get(),
+                    batchDesc=toplevel.stringVar[1].get(),
+                    taskIDs=tasks,
+                    employeeID=toplevel.stringVar[6].get().split(' - ')[0]
+            ):
+                toplevel.errVar[8].set("Submission failed to process")
+            else:
+                self._load_table_rows(self.db_connection.query_task_table())
+                toplevel.destroy()
+
+        def onBatchNoEntry(*args, **kwargs):
+            if toplevel.stringVar[0].get() in toplevel.entries[0].cget('value'):
+                desc = [value.split(' - ')[1] for value in self.db_connection.query_taskBatch()
+                        if value.split(' - ')[0] == toplevel.stringVar[0].get()]
+                toplevel.stringVar[1].set(desc[0])
+                #self.db_connection.query_task_updatable()
+                toplevel.entries[1].configure(foreground="black")
+                toplevel.entries[2].configure(value=[value[0] for value in self.db_connection.query_task_updatable()])
+                toplevel.entries[-1].configure(value=self.db_connection.query_worker())
+                for i in [1, 2, 6]:
+                    toplevel.entries[i].configure(state='enabled')
+            else:
+                for i in [1, 2, 6]:
+                    toplevel.entries[i].configure(state='readonly', foreground=self.styleObj.colors.get('secondary'))
+                toplevel.entries[2].configure(value=[])
+                toplevel.entries[-1].configure(value=[])
+                toplevel.stringVar[1].set('Batch Description')
+                toplevel.stringVar[2].set('Task Description')
+                toplevel.stringVar[-1].set('Employee Name')
+
+        def onTask1Entry(*args, **kwargs):
+            if toplevel.stringVar[2].get() in toplevel.entries[2].cget('value'):
+                toplevel.entries[3].configure(state='enabled',
+                                              value=[value for value in toplevel.entries[2].cget('value') if
+                                                     value != toplevel.stringVar[2].get()])
+            else:
+                toplevel.entries[3].configure(state='readonly', foreground=self.styleObj.colors.get('secondary'))
+                toplevel.stringVar[3].set("Task Description")
+
+        def onTask2Entry(*args, **kwargs):
+            if toplevel.stringVar[3].get() in toplevel.entries[3].cget('value'):
+                toplevel.entries[4].configure(state='enabled',
+                                              value=[value for value in toplevel.entries[3].cget('value') if
+                                                     value != toplevel.stringVar[3].get()])
+            else:
+                toplevel.entries[4].configure(state='readonly', foreground=self.styleObj.colors.get('secondary'))
+                toplevel.stringVar[4].set("Task Description")
+
+        def onTask3Entry(*args, **kwargs):
+            if toplevel.stringVar[4].get() in toplevel.entries[4].cget('value'):
+                toplevel.entries[5].configure(state='enabled',
+                                              value=[value for value in toplevel.entries[4].cget('value') if
+                                                     value != toplevel.stringVar[4].get()])
+            else:
+                toplevel.entries[5].configure(state='readonly', foreground=self.styleObj.colors.get('secondary'))
+                toplevel.stringVar[5].set("Task Description")
+
         # Creates Popup
-        toplevel = popup(master=self.masterWindow, title="Batch Assign Tasks", entryFieldQty=6)
+        toplevel = popup(master=self.masterWindow, title="Batch Assign Tasks", entryFieldQty=7)
 
         # Creates Widgets
         toplevel.create_title_frame(frame=toplevel.frameList[0], title="Batch Assign Tasks")
         for index, key in enumerate(
-                ["Batch No", "Task 1", "Task 2", "Task 3", "Task 4", "Assigned Employee"]):
+                ["Batch No", "Batch Description", "Task 1", "Task 2", "Task 3", "Task 4", "Assigned Employee"]):
             toplevel.create_label(frame=toplevel.frameList[index + 1], label=key)
             toplevel.create_errMsg(frame=toplevel.frameList[index + 1], errVar=toplevel.errVar[index])
-        toplevel.create_entry(frame=toplevel.frameList[1], stringVar=toplevel.stringVar[2])
-        toplevel.create_combobox(frame=toplevel.frameList[2], stringVar=toplevel.stringVar[2],
-                                 options=["Task A", "Task B"])
-        toplevel.create_combobox(frame=toplevel.frameList[3], stringVar=toplevel.stringVar[3],
-                                 options=["Task A", "Task B"])
-        toplevel.create_combobox(frame=toplevel.frameList[4], stringVar=toplevel.stringVar[4],
-                                 options=["Task A", "Task B"])
-        toplevel.create_combobox(frame=toplevel.frameList[5], stringVar=toplevel.stringVar[5],
-                                 options=["Task A", "Task B"])
-        toplevel.create_buttonbox(frame=toplevel.frameList[6])
+        toplevel.create_combobox(frame=toplevel.frameList[1], stringVar=toplevel.stringVar[0],
+                                 options=[value.split(' - ')[0] for value in self.db_connection.query_taskBatch()])
+        toplevel.create_entry(frame=toplevel.frameList[2], stringVar=toplevel.stringVar[1], state="readonly")
+        toplevel.create_combobox(frame=toplevel.frameList[3], stringVar=toplevel.stringVar[2],
+                                 options=["Task A", "Task B"], state="readonly")
+        toplevel.create_combobox(frame=toplevel.frameList[4], stringVar=toplevel.stringVar[3],
+                                 options=["Task A", "Task B"], state="readonly")
+        toplevel.create_combobox(frame=toplevel.frameList[5], stringVar=toplevel.stringVar[4],
+                                 options=["Task A", "Task B"], state="readonly")
+        toplevel.create_combobox(frame=toplevel.frameList[6], stringVar=toplevel.stringVar[5],
+                                 options=["Task A", "Task B"], state="readonly")
+        toplevel.create_combobox(frame=toplevel.frameList[7], stringVar=toplevel.stringVar[6], state="readonly")
+        toplevel.create_buttonbox(frame=toplevel.frameList[8])
+        #print(toplevel.frameList[8].winfo_children()[2].cget('textvariable'))
+        #print(toplevel.errVar[8])
+        toplevel.submitButton.configure(command=lambda: onSubmitButton(), state="enabled")
+        batchButton = ttk.Button(toplevel.frameList[8], bootstyle="dark", text="Generate new Task Batch No.",
+                                 command=None)
+        batchButton.grid(row=1, column=0, sticky="w")
 
         # Preview Text
-        entryList = ["taskDescriptionEntry", "taskDescriptionEntry", "taskDescriptionEntry", "taskDescriptionEntry",
-                     "employeeNameEntry"]
+        entryList = ["taskBatchEntry", "batchDescriptionEntry", "taskDescriptionEntry", "taskDescriptionEntry",
+                     "taskDescriptionEntry", "taskDescriptionEntry", "employeeNameEntry"]
         for index, value in enumerate(entryList):
             previewText(toplevel.entries[index], key=value)
+
+        toplevel.stringVar[0].trace("w", onBatchNoEntry)
+        toplevel.stringVar[2].trace("w", onTask1Entry)
+        toplevel.stringVar[3].trace("w", onTask2Entry)
+        toplevel.stringVar[4].trace("w", onTask3Entry)
 
         # Validation
         #valObj = validation()
@@ -228,10 +305,10 @@ class taskFrame(pageFrame):
 
         # Bindings
         toplevel.bind_entry_return()
-        toplevel.traceButton()
+        #toplevel.traceButton()
 
         # Configure Frames
-        for index in range(1, 6):
+        for index in range(1, 8):
             toplevel.configure_frame(frame=toplevel.frameList[index])
 
         # Grid Frames
@@ -247,7 +324,6 @@ class taskFrame(pageFrame):
                 self._load_table_rows(self.db_connection.query_task_table())
             else:
                 popup.deleteFail(self)
-
 
 
 # Test Case
