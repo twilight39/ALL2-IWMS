@@ -51,7 +51,10 @@ class DatabaseConnection:
 
     def query_employee(self, employeeID:int) -> tuple:
         """Returns: [EmployeeName: str, RoleName: str]"""
-        self.cursor.execute("SELECT w.Name, r.RoleName FROM Roles r INNER JOIN Workers w ON w.RoleID = r.RoleID WHERE w.WorkerID = ?",
+        self.cursor.execute("""SELECT w.Name, r.RoleName, a.Email 
+                FROM Roles r INNER JOIN Workers w ON w.RoleID = r.RoleID 
+                INNER JOIN Accounts a ON w.WorkerID = a.WorkerID
+                WHERE w.WorkerID = ?""",
                             (employeeID, ))
         return self.cursor.fetchone()
 

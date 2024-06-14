@@ -7,3 +7,4 @@ from Frames.purchaseOrderFrame import purchaseOrderFrame
 from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
+from Frames.settingsPopup import SettingsPopup
