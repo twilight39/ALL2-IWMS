@@ -32,7 +32,7 @@ class SettingsPopup(ttk.window.Toplevel):
     def __init__(self, parent: ttk.window.Window, employeeID: int, theme: str = 'litera'):
 
         # Initialise TopLevel
-        super().__init__(title="Settings", takefocus=True)  # , transient=parent)
+        super().__init__(title="Settings", takefocus=True, size=(1000, 1600))  # , transient=parent)
         self.place_window_center()
         self.config = Configuration()
         self.db_connection = DatabaseConnection()
@@ -194,7 +194,7 @@ class SettingsPopup(ttk.window.Toplevel):
                 self.image_cache.set(f"{self.themes_canvas} - {self.themes_canvas.winfo_width()}", img)
             else:
                 self.__redisplay_canvas__(self.themes_canvas, canvas_cache, 0.608)
-                self.themes_frame.configure(height=self.themes_canvas.winfo_height() + 50)
+
 
     @lru_cache(2)
     def _canvas_command(self, event):
@@ -267,7 +267,7 @@ class SettingsPopup(ttk.window.Toplevel):
 if __name__ == '__main__':
     # Create Main Window, and center it
     window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
-    #window.withdraw()
+    window.withdraw()
 
     SettingsPopup(window, 1)
 
