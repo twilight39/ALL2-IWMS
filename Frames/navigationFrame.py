@@ -11,40 +11,46 @@ from Frames.purchaseOrderFrame import purchaseOrderFrame
 from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
+from Frames.settingsPopup import SettingsPopup
 
 
 class navigationFrame(ttk.Frame):
 
-    def __init__(self, master:ttk.Window, employeeID:int, rFrame:ttk.Frame) -> None:
+    def __init__(self, master: ttk.window.Window, employeeID: int, rFrame: ttk.Frame) -> None:
 
         # Button Configuration for roles
         buttonConfig = {
-            "Worker" : ["Dashboard", "Inventory", "Report"],
-            "Supervisor" : ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"],
-            "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor", "Report"]
+            "Worker": ["Dashboard", "Inventory", "Report"],
+            "Supervisor": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor",
+                           "Report"],
+            "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor",
+                              "Report"]
         }
-
-        # Inherit ttk.Frame, sets colour to warning
-        super().__init__(master, bootstyle="warning")
-        self.grid(row=0, column=0, sticky="nwes")
 
         # References
         self.Fonts = fonts()
         self.styleObj = master.style
         self.config = Configuration()
-        self.master = master
+        self.master: ttk.window.Window = master
         self.rFrame = rFrame
         self.db_connection = Database.DatabaseConnection()
         self.employeeID = employeeID
         self.name = self.db_connection.query_employee(employeeID)[0]
         self.role = self.db_connection.query_employee(employeeID)[1]
-        print(self.name, self.role)
+
+        preferences = self.config.getPreferences(str(self.employeeID))
+        self.styleObj.theme_use(preferences[1])
+        # print(self.styleObj.theme.name)
+
+        # Inherit ttk.Frame, sets colour to warning
+        super().__init__(master, bootstyle="warning")
+        self.grid(row=0, column=0, sticky="nwes")
 
         # Application Images
         graphicsPath = self.config.getGraphicsPath()
         self.images = [
             Image.open(f'{graphicsPath}/settingsIcon.png').resize((40, 40)),
-            self.make_circular_image(f'{graphicsPath}/testPFP.png', 200)
+            self.make_circular_image(f'{graphicsPath}/User_Avatars/{preferences[0]}.png', 200)
         ]
 
         self.imageObject = []
@@ -55,12 +61,17 @@ class navigationFrame(ttk.Frame):
         northFrame = ttk.Frame(self, bootstyle="warning", padding=20)
         southFrame = ttk.Frame(self, bootstyle="warning", padding=20)
 
-        KEAILabel = ttk.Label(northFrame, text="KEAI", font=self.Fonts.fonts["header3"], bootstyle="warning-inverse", foreground="black")
-        settingsIcon = ttk.Button(northFrame, image=self.imageObject[0],  bootstyle="warning")
-        profilePicture = ttk.Label(northFrame, image=self.imageObject[1], bootstyle="warning-inverse") # Placeholder for user image
+        KEAILabel = ttk.Label(northFrame, text="KEAI", font=self.Fonts.fonts["header3"], bootstyle="warning-inverse",
+                              foreground="black")
+        settingsIcon = ttk.Button(northFrame, image=self.imageObject[0], bootstyle="warning",
+                                  command=lambda: SettingsPopup(self.master, self.employeeID, self.redisplay_theme))
+        profilePicture = ttk.Label(northFrame, image=self.imageObject[1],
+                                   bootstyle="warning-inverse")  # Placeholder for user image
         userFrame = ttk.Frame(northFrame, bootstyle="warning")
-        userName = ttk.Label(userFrame, text= self.name, font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER) # To query database
-        userID = ttk.Label(userFrame, text="Worker ID: " + str(self.employeeID), font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER) # To query database
+        userName = ttk.Label(userFrame, text=self.name, font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse",
+                             foreground="black", anchor=ttk.CENTER)  # To query database
+        userID = ttk.Label(userFrame, text="Worker ID: " + str(self.employeeID), font=self.Fonts.fonts["regular2"],
+                           bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER)  # To query database
 
         # Grid Frames
         northFrame.grid(row=0, column=0, sticky="nwes")
@@ -93,7 +104,8 @@ class navigationFrame(ttk.Frame):
         # Create and grid buttons
         self.styleObj.configure(style="dark.Link.TButton", font=self.Fonts.get_font("regular2"), foreground="black")
         for row, button_text in enumerate(buttonConfig[self.role], start=1):
-            button = ttk.Button(southFrame, text=button_text, bootstyle="dark-link", command=lambda x=button_text: self.getButtonCommand(x))
+            button = ttk.Button(southFrame, text=button_text, bootstyle="dark-link",
+                                command=lambda x=button_text: self.getButtonCommand(x))
             button.grid(row=row, column=1, sticky="we")
             southFrame.rowconfigure(row, weight=1)
         southFrame.rowconfigure(0, weight=1)
@@ -103,6 +115,8 @@ class navigationFrame(ttk.Frame):
             southFrame.rowconfigure(4, weight=10)
         else:
             southFrame.rowconfigure(8, weight=1)
+
+        self.rFrame = productFrame(self.master, self.role)
 
         # Debugging
         # self.bind("<Configure>", lambda event: print(self.winfo_width()))
@@ -139,6 +153,11 @@ class navigationFrame(ttk.Frame):
             self.rFrame.destroy()
             self.rFrame = vendorFrame(self.master, self.role)
 
+    def redisplay_theme(self):
+        self.destroy()
+        navigationFrame(self.master, self.employeeID, self.rFrame)
+        # self.destroy()
+
     def make_circular_image(self, image_path, output_diameter):
 
         img = Image.open(image_path).resize((output_diameter, output_diameter))
@@ -156,22 +175,19 @@ class navigationFrame(ttk.Frame):
         return output_img
 
 
-
 # Test Case
 if __name__ == "__main__":
-
-
-
     # Create Main Window, and center it
-    window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
+    window = ttk.window.Window(title="Keai IWMS", themename="flatly", size=(1280, 720))
     ttk.window.Window.place_window_center(window)
     window.rowconfigure(0, weight=1)
     window.columnconfigure(0, weight=1, minsize=200)
     window.columnconfigure(1, weight=20)
 
     # Creates Navigation Frame
-    rFrame = inventoryFrame(window, "Administrator")
+    rFrame = ttk.Frame(window)
     lFrame = navigationFrame(window, 1, rFrame)
+    lFrame.redisplay_theme()
 
 
     # Starts Event Main Loop

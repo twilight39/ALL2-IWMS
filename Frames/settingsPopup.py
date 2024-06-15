@@ -2,7 +2,6 @@ import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
 from PIL import ImageTk, Image, ImageDraw
 from collections import OrderedDict
-from weakref import proxy
 from functools import lru_cache
 import time
 
@@ -29,7 +28,7 @@ class LRUCache(OrderedDict):
 
 
 class SettingsPopup(ttk.window.Toplevel):
-    def __init__(self, parent: ttk.window.Window, employeeID: int, theme: str = 'litera'):
+    def __init__(self, parent: ttk.window.Window, employeeID: int, callback_function= None):
 
         # Initialise TopLevel
         super().__init__(title="Settings", takefocus=True, size=(1000, 1600))  # , transient=parent)
@@ -38,6 +37,8 @@ class SettingsPopup(ttk.window.Toplevel):
         self.db_connection = DatabaseConnection()
         self.styleObj = ttk.style.Style.get_instance()
         self.font = fonts()
+        self.employeeID = employeeID
+        self.callback_function = callback_function
         name = self.db_connection.query_employee(employeeID)[0]
         role = self.db_connection.query_employee(employeeID)[1]
         email = self.db_connection.query_employee(employeeID)[2]
@@ -46,11 +47,11 @@ class SettingsPopup(ttk.window.Toplevel):
 
         # Application Images
         graphics_path = self.config.getGraphicsPath()
-        self.image_paths = (
-            f'{graphics_path}/testPFP.png',
+        self.image_paths = [
+            f'{graphics_path}/User_Avatars/{self.config.getPreferences(str(self.employeeID))[0]}.png',
             f'{graphics_path}/User_Avatars/pfp_template.png',
             f'{graphics_path}/themes_template.png'
-        )
+        ]
 
         self.image_objects = []
         for im in self.image_paths:
@@ -58,7 +59,7 @@ class SettingsPopup(ttk.window.Toplevel):
 
         # Create Frames
         self.scrollable_frame = ScrolledFrame(self, bootstyle="rounded-secondary", padding=0)
-        self.scrollable_frame.configure(bootstyle=theme)
+        self.scrollable_frame.configure(bootstyle=self.styleObj.theme.name)
 
         self.title_frame = ttk.Frame(self.scrollable_frame, bootstyle="warning")
         self.accounts_frame = ttk.Frame(self.scrollable_frame)
@@ -80,7 +81,7 @@ class SettingsPopup(ttk.window.Toplevel):
 
         # Title Frame
         ttk.Label(self.title_frame, text="Settings", font=self.font.get_font("header1"),
-                  foreground=self.styleObj.colors.get('dark'), bootstyle="inverse-warning").grid(row=1, column=1)
+                  foreground="black", bootstyle="inverse-warning").grid(row=1, column=1)
         ttk.Frame(self.title_frame, bootstyle="dark", height=1).grid(row=2, column=1, sticky='wes')
         self.title_frame.rowconfigure(1, weight=1)
         self.title_frame.columnconfigure(1, weight=1)
@@ -162,6 +163,16 @@ class SettingsPopup(ttk.window.Toplevel):
         self.pfp_canvas.bind("<Button-1>", lambda event: self._canvas_command(event))
         self.themes_canvas.bind("<Button-1>", lambda event: self._canvas_command(event))
 
+    def update_preferences(self):
+        preferences = self.config.getPreferences(str(self.employeeID))
+        graphics_path = self.config.getGraphicsPath()
+        self.callback_function()
+
+        self.image_paths[0] = f"{graphics_path}/User_Avatars/{preferences[0]}.png"
+        img = ImageTk.PhotoImage(self._make_circular_image(self.image_paths[0], int(self.winfo_width() / 4)))
+        self.__redisplay_pfp__(self.image_widgets[0], img)
+        self.image_cache.set(f"{self.winfo_width()} - {self.winfo_height()}", img)
+
     def _resize_images(self):
         last_resize = getattr(self, '_last_resize', None)
         current_time = time.time()
@@ -219,6 +230,8 @@ class SettingsPopup(ttk.window.Toplevel):
             else:
                 result += "c"
 
+            self.config.writePreferences(str(self.employeeID), profile_picture=result)
+
         elif event.widget == self.themes_canvas:
             if x < 0.5 and y < 0.5:
                 result = 'yeti'
@@ -229,7 +242,10 @@ class SettingsPopup(ttk.window.Toplevel):
             else:
                 result = 'flatly'
 
-        print(result)
+            self.config.writePreferences(str(self.employeeID), theme_name=result)
+
+        self.update_preferences()
+        # print(result)
 
     @staticmethod
     @lru_cache(2)
@@ -267,7 +283,7 @@ class SettingsPopup(ttk.window.Toplevel):
 if __name__ == '__main__':
     # Create Main Window, and center it
     window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
-    window.withdraw()
+    # window.withdraw()
 
     SettingsPopup(window, 1)
 
