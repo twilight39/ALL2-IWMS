@@ -1,8 +1,9 @@
-import ttkbootstrap.toast
 from Frames.pageFrame import *
 from Database.Database import DatabaseConnection
 from ttkbootstrap.validation import validator, add_validation
 import re
+
+from Frames.popup import popup
 
 
 class inventoryFrame(pageFrame):

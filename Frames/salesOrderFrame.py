@@ -1,5 +1,3 @@
-import re
-
 import ttkbootstrap
 import ttkbootstrap.scrolled
 import ttkbootstrap.tableview
@@ -7,6 +5,9 @@ import ttkbootstrap.toast
 from Frames.pageFrame import *
 from Database.Database import DatabaseConnection
 from ttkbootstrap.validation import add_validation, validator
+
+from Frames.popup import popup
+
 
 class salesOrderFrame(pageFrame):
 

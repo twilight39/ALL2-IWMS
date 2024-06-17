@@ -1,7 +1,8 @@
-import ttkbootstrap.toast
 from Frames.pageFrame import *
 from Database.Database import DatabaseConnection
-from ttkbootstrap.validation import validator, add_validation
+
+from Frames.popup import popup
+
 
 class productFrame(pageFrame):
 
@@ -174,7 +175,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = productFrame(window, "1")
+    rFrame = productFrame(window, "Administrator")
     lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 

@@ -116,7 +116,7 @@ class navigationFrame(ttk.Frame):
         else:
             southFrame.rowconfigure(8, weight=1)
 
-        self.rFrame = productFrame(self.master, self.role)
+        self.rFrame = inventoryFrame(self.master, self.role)
 
         # Debugging
         # self.bind("<Configure>", lambda event: print(self.winfo_width()))
@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     # Creates Navigation Frame
     rFrame = ttk.Frame(window)
-    lFrame = navigationFrame(window, 1, rFrame)
+    lFrame = navigationFrame(window, 3, rFrame)
     lFrame.redisplay_theme()
 
 

@@ -1,7 +1,7 @@
-import ttkbootstrap.toast
 from Frames.pageFrame import *
 from Database.Database import DatabaseConnection
-from ttkbootstrap.dialogs import Messagebox
+
+from Frames.popup import popup
 
 
 class vendorFrame(pageFrame):
