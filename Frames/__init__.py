@@ -8,3 +8,4 @@ from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
 from Frames.settingsPopup import SettingsPopup
+from Frames.accountsPopup import AccountsPopup

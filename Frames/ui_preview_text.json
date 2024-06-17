@@ -27,5 +27,6 @@
   "dateEntry": "YYYY-MM-DD",
   "taskEntry": "0 - Task Description",
   "taskBatchEntry": "TASK-000000-[A-Z]",
-  "batchDescriptionEntry": "Batch Description"
+  "batchDescriptionEntry": "Batch Description",
+  "employeeRoleEntry": "Employee Role"
 }

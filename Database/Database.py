@@ -49,6 +49,12 @@ class DatabaseConnection:
         if self.connection:
             self.connection.close()
 
+    def query_accounts_table(self) -> tuple:
+        self.cursor.execute("""SELECT w.WorkerID, w.Name, r.RoleName, a.Email, w.ContactNumber
+                FROM Workers w INNER JOIN Roles r ON w.RoleID=r.RoleID
+                INNER JOIN Accounts a ON w.WorkerID=a.WorkerID """)
+        return tuple(self.cursor.fetchall())
+
     def query_employee(self, employeeID:int) -> tuple:
         """Returns: [EmployeeName: str, RoleName: str]"""
         self.cursor.execute("""SELECT w.Name, r.RoleName, a.Email 
@@ -75,7 +81,8 @@ class DatabaseConnection:
             notifications = []
 
             for index in range(3, roleID-1, -1):
-                self.cursor.execute("SELECT NotificationID, TimeStamp, NotificationDesc FROM Notification WHERE WorkerID = ?", (index,))
+                self.cursor.execute("""SELECT NotificationID, TimeStamp, NotificationDesc FROM Notification 
+                                        WHERE RoleID = ?""", (index,))
                 notifications += self.cursor.fetchall()
 
             notifications = sorted(notifications, key = lambda timestamp:notifications[1])
@@ -85,10 +92,10 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
-    def add_notification(self, employeeID:int, message:str) -> bool:
+    def add_notification(self, roleID:int, message:str) -> bool:
         try:
-            self.cursor.execute("""INSERT INTO Notification (WorkerID, Timestamp, NotificationDesc)
-                VALUES (?, ?, ?)""", (employeeID, datetime.now(), message,))
+            self.cursor.execute("""INSERT INTO Notification (RoleID, Timestamp, NotificationDesc)
+                VALUES (?, ?, ?)""", (roleID, datetime.now(), message,))
             self.connection.commit()
             return True
 
@@ -453,15 +460,12 @@ class DatabaseConnection:
 
     def add_task(self, description: str, eta: str, worker_id: int, batch_id: int = None) -> bool:
         try:
-            print(worker_id)
             if re.match(r'\d+', str(worker_id)) is not None:
-                print("1")
                 self.cursor.execute("""
                      INSERT INTO Tasks (TaskDesc, WorkerID, ETA, TaskStatus, TBatchID)
                     VALUES (?, ?, ?, 'Not Started', ?)
                  """, (description, worker_id, eta, batch_id))
             else:
-                print("2")
                 self.cursor.execute("""
                 INSERT INTO Tasks (TaskDesc, ETA, TaskStatus, TBatchID)
                 VALUES (?, ?, 'Not Started', ?)""", (description, eta, batch_id))
@@ -963,6 +967,18 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return False
 
+    def deleteAccount(self, employeeID:int) -> bool:
+
+        try:
+            self.cursor.execute("DELETE FROM Accounts WHERE WorkerID = ?", (employeeID,))
+            self.cursor.execute("UPDATE Tasks SET WorkerID = NULL WHERE WorkerID = ?", (employeeID,))
+            self.cursor.execute("DELETE FROM Workers WHERE WorkerID = ?", (employeeID,))
+            self.connection.commit()
+            return True
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return False
+
     def _generateID(self, latestID:str) -> str:
         try:
             string = latestID.split('-')
@@ -1035,10 +1051,10 @@ class DatabaseConnection:
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS Notification (
             NotificationID INTEGER PRIMARY KEY AUTOINCREMENT,
-            WorkerID INTEGER NOT NULL,
+            RoleID INTEGER NOT NULL,
             TimeStamp TEXT,
             NotificationDesc TEXT,
-            FOREIGN KEY (WorkerID) REFERENCES Workers(WorkerID));
+            FOREIGN KEY (RoleID) REFERENCES Roles(RoleID));
             ''')
 
         self.cursor.execute('''
@@ -1168,54 +1184,44 @@ class authentication:
         except sqlite3.Error as err:
             print(f"Error: {err}")
 
-    def createAccount(self, adminID:int , adminPassword: str, employeeEmail: str, employeeRoleID: int, employeeName: str, employeeContactNumber: str ,employeePassword: str) -> bool:
+    def createAccount(self, employeeEmail: str, employeeRoleID: int, employeeName: str, employeeContactNumber: str ,employeePassword: str) -> bool:
         cursor = self.db_connection.cursor
+        hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(employeePassword.encode()).digest()), bcrypt.gensalt(rounds=14))
 
-        # Checks if Admin is creating the account
-        cursor.execute("SELECT RoleID FROM Workers WHERE WorkerID = ?", (adminID,))
-        if cursor.fetchone()[0] != 1:
-            print("not admin")
+        # Insert Account
+        try:
+            cursor.execute("""INSERT INTO Workers (RoleID, Name, ContactNumber) VALUES (?, ?, ?)""", (employeeRoleID, employeeName, employeeContactNumber,))
+            employeeID = cursor.lastrowid
+            cursor.execute("INSERT INTO Accounts (WorkerID, Email, HashedPW) VALUES (?, ?, ?)", (employeeID, employeeEmail, hashed,))
+            self.db_connection.connection.commit()
+            return True
+
+        except sqlite3.Error as e:
+            print(f"Error:{e}")
             return False
 
-        # Authenticate Admin
-        cursor.execute("SELECT Email FROM Accounts WHERE WorkerID = ?", (adminID,))
-        if self.authenticate(cursor.fetchone()[0], adminPassword):
-            hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(employeePassword.encode()).digest()), bcrypt.gensalt(rounds=14))
-
-            # Insert Account
-            try:
-                cursor.execute("""INSERT INTO Workers (RoleID, Name, ContactNumber) VALUES (?, ?, ?)""", (employeeRoleID, employeeName, employeeContactNumber,))
-                employeeID = cursor.lastrowid
-                cursor.execute("INSERT INTO Accounts (WorkerID, Email, HashedPW) VALUES (?, ?, ?)", (employeeID, employeeEmail, hashed,))
-                self.db_connection.connection.commit()
-                return True
-
-            except sqlite3.Error as e:
-                print(f"Error:{e}")
-                return False
-
-        print("admin failed to authenticate.")
-        return False
-
-
-    def deleteAccount(self, adminID:int, password:str, employeeID:int) -> bool:
+    def updateAccount(self, employeeEmail: str, employeeRoleID: int, employeeName: str, employeeContactNumber: str ,
+                      employeePassword: str, employeeID: int) -> bool:
         cursor = self.db_connection.cursor
+        hashed = bcrypt.hashpw(base64.b64encode(hashlib.sha256(employeePassword.encode()).digest()),
+                               bcrypt.gensalt(rounds=14))
 
-        # Checks if Admin is creating the account
-        cursor.execute("SELECT RoleID FROM Workers WHERE WorkerID = ?", (adminID,))
-        if cursor.fetchone()[0] != 1:
-            print("not admin")
+        # Insert Account
+        try:
+            cursor.execute("""UPDATE Workers SET RoleID = ?, Name = ?, ContactNumber = ? WHERE WorkerID = ?""",
+                           (employeeRoleID, employeeName, employeeContactNumber, employeeID,))
+            cursor.execute("""UPDATE Accounts SET Email = ?, HashedPW = ? WHERE WorkerID = ?""",
+                           (employeeEmail, hashed, employeeID))
+            self.db_connection.connection.commit()
+            return True
+
+        except sqlite3.Error as e:
+            print(f"Error:{e}")
             return False
 
-        # Authenticate Admin
-        cursor.execute("SELECT Email FROM Accounts WHERE WorkerID = ?", (adminID,))
-        if self.authenticate(cursor.fetchone()[0], password):
-            try:
-                cursor.execute("DELETE FROM Accounts WHERE WorkerID = ?", (employeeID,))
-            except sqlite3.Error as err:
-                print(f"Error: {err}")
-                return False
-        return False
+
+
+
 
 # Test Case
 if __name__ == "__main__":
@@ -1252,4 +1258,4 @@ if __name__ == "__main__":
     #con.update_salesOrder_delivery('SALE-240612-A')
     #print(con.query_taskBatch())
     #con.update_task(3, 'Review code for pull request', 2, 'In Progress', '2024-05-27', 'TASK-240611-A')
-    print(con.query_worker())
+    print(con.query_accounts_table())

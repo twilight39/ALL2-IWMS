@@ -1,12 +1,17 @@
+import _tkinter
+
 import ttkbootstrap as ttk
 from ttkbootstrap.scrolled import ScrolledFrame
+from ttkbootstrap.dialogs.dialogs import QueryDialog
 from PIL import ImageTk, Image, ImageDraw
 from collections import OrderedDict
 from functools import lru_cache
 import time
 
-from utils import fonts, Configuration
-from Database.Database import DatabaseConnection
+from Frames.accountsPopup import AccountsPopup
+from Frames.popup import popup
+from utils import fonts, Configuration, previewText, validation
+from Database.Database import DatabaseConnection, authentication
 
 
 class LRUCache(OrderedDict):
@@ -28,7 +33,7 @@ class LRUCache(OrderedDict):
 
 
 class SettingsPopup(ttk.window.Toplevel):
-    def __init__(self, parent: ttk.window.Window, employeeID: int, callback_function= None):
+    def __init__(self, parent: ttk.window.Window, employeeID: int, callback_function=None):
 
         # Initialise TopLevel
         super().__init__(title="Settings", takefocus=True, size=(1000, 1600))  # , transient=parent)
@@ -39,6 +44,7 @@ class SettingsPopup(ttk.window.Toplevel):
         self.font = fonts()
         self.employeeID = employeeID
         self.callback_function = callback_function
+        self.master = parent
         name = self.db_connection.query_employee(employeeID)[0]
         role = self.db_connection.query_employee(employeeID)[1]
         email = self.db_connection.query_employee(employeeID)[2]
@@ -101,8 +107,8 @@ class SettingsPopup(ttk.window.Toplevel):
             row=6, column=0)
         if role == "Administrator":
             self.styleObj.configure('font.danger.Link.TButton', font=self.font.get_font('thin2'))
-            ttk.Button(self.accounts_frame, text="Update Accounts", style='font.danger.Link.TButton').grid(
-                row=7, column=0)
+            ttk.Button(self.accounts_frame, text="Update Accounts", style='font.danger.Link.TButton',
+                       command=lambda: self.accounts_page()).grid(row=7, column=0)
         ttk.Frame(self.accounts_frame, height=25).grid(row=8, column=0, sticky="nwes")
 
         self.accounts_frame.rowconfigure(1, weight=1)
@@ -173,6 +179,45 @@ class SettingsPopup(ttk.window.Toplevel):
         self.__redisplay_pfp__(self.image_widgets[0], img)
         self.image_cache.set(f"{self.winfo_width()} - {self.winfo_height()}", img)
 
+    def accounts_page(self):
+        AccountsPopup(self.master)
+
+    def reset_password(self):
+        def onSubmit():
+            if toplevel.stringVar[0].get() != toplevel.stringVar[1].get():
+                toplevel.errVar[3].set("Passwords do not match")
+
+            elif toplevel.errVar[0].get() != "" or toplevel.errVar[1].get() != "":
+                toplevel.errVar[3].set("Invalid password")
+
+            else:
+                authentication().resetPassword(self.employeeID, toplevel.stringVar[0].get())
+                popup.infoPopup(self, "Password successfully changed")
+                toplevel.destroy()
+
+        toplevel = popup(self, "Change Password", 2)
+        toplevel.frameList[0].configure(padding=10, bootstyle="light")
+        valObj = validation()
+
+        for i, e in enumerate(["New Password", "Confirm Password"]):
+            toplevel.create_label(toplevel.frameList[i], e)
+            toplevel.create_errMsg(toplevel.frameList[i], toplevel.errVar[i])
+            toplevel.create_entry(toplevel.frameList[i], toplevel.stringVar[i])
+            toplevel.entries[i].configure(show="*")
+            previewText(toplevel.entries[i], key="passwordEntry")
+            valObj.validate(toplevel.entries[i], "password", toplevel.errVar[i])
+
+        toplevel.create_buttonbox(toplevel.frameList[2])
+        toplevel.submitButton.configure(command=lambda: onSubmit())
+
+        toplevel.bind_entry_return()
+        toplevel.traceButton()
+
+        for e in range(0, 2):
+            toplevel.configure_frame(toplevel.frameList[e])
+        toplevel.configure_toplevel()
+
+
     def _resize_images(self):
         last_resize = getattr(self, '_last_resize', None)
         current_time = time.time()
@@ -206,7 +251,6 @@ class SettingsPopup(ttk.window.Toplevel):
             else:
                 self.__redisplay_canvas__(self.themes_canvas, canvas_cache, 0.608)
 
-
     @lru_cache(2)
     def _canvas_command(self, event):
         x = float(f"{event.x / event.widget.winfo_width():.3f}")
@@ -223,9 +267,9 @@ class SettingsPopup(ttk.window.Toplevel):
             else:
                 result += "4"
 
-            if x < 1/3:
+            if x < 1 / 3:
                 result += "a"
-            elif x < 2/3:
+            elif x < 2 / 3:
                 result += "b"
             else:
                 result += "c"
@@ -283,9 +327,9 @@ class SettingsPopup(ttk.window.Toplevel):
 if __name__ == '__main__':
     # Create Main Window, and center it
     window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
-    # window.withdraw()
+    window.withdraw()
 
-    SettingsPopup(window, 1)
+    SettingsPopup(window, 1).reset_password()
 
     # Starts Event Main Loop
     window.mainloop()

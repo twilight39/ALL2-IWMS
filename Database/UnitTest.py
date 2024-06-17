@@ -5,13 +5,11 @@ from datetime import date
 def populateTestTable(db_connection:DatabaseConnection):
     auth = authentication()
     for name, roleID, contactNumber, email, password in [
-        ["John Doe", 2, "123-456-7890", "john@example.com", "JohnIsDumb"],
-        ["Bob Johnson", 3, "444-789-0123" ,"bob.johnson@company.com", "BobTheBuilder0"],
-        ["Charlie Williams", 2, "333-567-8901" ,"charlie.williams@company.com", "KingCharlesTheSecond0"]
+        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb"],
+        ["Bob Johnson", 3, "4447890123" ,"bob.johnson@company.com", "BobTheBuilder0"],
+        ["Charlie Williams", 2, "3335678901" ,"charlie.williams@company.com", "KingCharlesTheSecond0"]
     ]:
         auth.createAccount(
-            adminID= 1,
-            adminPassword="admin1234",
             employeeEmail=email,
             employeeName=name,
             employeeRoleID=roleID,
@@ -35,8 +33,8 @@ def populateTestTable(db_connection:DatabaseConnection):
         db_connection.add_task(description, eta, workerID, batchID)
     print(db_connection.query_task_table())
 
-    db_connection.add_taskBatch("Batch 1", "TASK-240611-A",[1,2])
-    db_connection.add_taskBatch("Batch 2", "TASK-240611-B",[3])
+    db_connection.add_taskBatch("Batch 1", "TASK-240611-A", [1,2])
+    db_connection.add_taskBatch("Batch 2", "TASK-240611-B", [3])
     db_connection.delete_taskBatch(2)
     db_connection.update_taskBatch(1, "Super Space Soup Rare", [1,3], 2)
     print(db_connection.query_taskBatch())
@@ -58,7 +56,6 @@ def populateTestTable(db_connection:DatabaseConnection):
     print(db_connection.query_purchaseOrder())
 
     for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B"]]:
-        #print(number)
         db_connection.receive_inventory(number)
 
     db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 3, 15)
@@ -88,18 +85,16 @@ def authTest():
 
     # Creates Accounts
     for name, roleID, contactNumber, email, password in [
-        ["John Doe", 2, "123-456-7890", "john@example.com", "JohnIsDumb"],
-        ["Bob Johnson", 3, "444-789-0123" ,"bob.johnson@company.com", "BobTheBuilder"],
-        ["Charlie Williams", 2, "333-567-8901" ,"charlie.williams@company.com", "KingCharlesTheSecond"]
+        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb"],
+        ["Bob Johnson", 3, "4447890123", "bob.johnson@company.com", "BobTheBuilder"],
+        ["Charlie Williams", 2, "3335678901", "charlie.williams@company.com", "KingCharlesTheSecond"]
     ]:
         auth.createAccount(
-            adminID= 1,
-            adminPassword="admin1234",
             employeeEmail=email,
             employeeName=name,
             employeeRoleID=roleID,
             employeeContactNumber=contactNumber,
-            employeePassword= password
+            employeePassword=password
         )
     print("Accounts created successfully.")
 

@@ -103,7 +103,9 @@ class validation:
             "vendor": validator(self.validateVendor),
             "productNo": validator(self.validateProductNo),
             "existingProductNo": validator(self.validateExistingProductNo),
-            "shipmentNo": validator(self.validateShipmentNo)
+            "shipmentNo": validator(self.validateShipmentNo),
+            "role": validator(self.validateRole),
+            "contactNumber": validator(self.validateContactNumber),
         }
 
     def validate(self, widget, key, errStringVar):
@@ -251,6 +253,32 @@ class validation:
 
         else:
             self.errText[event.widget].set("Invalid Product No.; Example: [SHIP-240603-B]")
+            return False
+
+    def validateRole(self, event):
+        if event.postchangetext == "":
+            self.errText[event.widget].set("")
+            return True
+
+        elif event.postchangetext in ["3 - Worker", "2 - Supervisor", "1 - Administrator"]:
+            self.errText[event.widget].set("")
+            return True
+
+        else:
+            self.errText[event.widget].set("Invalid Role")
+            return False
+
+    def validateContactNumber(self, event):
+        if event.postchangetext == "":
+            self.errText[event.widget].set("")
+            return True
+
+        elif re.match(r"^[\d]{10}$", event.postchangetext):
+            self.errText[event.widget].set("")
+            return True
+
+        else:
+            self.errText[event.widget].set("Invalid Contact Number")
             return False
 
     @staticmethod
