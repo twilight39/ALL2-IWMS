@@ -1,6 +1,6 @@
 import os
-from Database.Database import DatabaseConnection
-from Database.Authentication import authentication
+from Database import DatabaseConnection
+from Authentication import authentication
 from datetime import date
 
 def populateTestTable(db_connection:DatabaseConnection):
@@ -56,22 +56,37 @@ def populateTestTable(db_connection:DatabaseConnection):
     db_connection.delete_purchaseOrder("SHIP-240602-C")
     print(db_connection.query_purchaseOrder())
 
-    for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B"]]:
+    for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B", "C"]]:
         db_connection.receive_inventory(number)
 
     db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 3, 15)
-    db_connection.update_inventory("FUR-CHR-M-BL-001", "BATCH-240524-A", 1, 3, 8)
+    db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 4, 7)
+    db_connection.update_inventory("FUR-CHR-M-BL-001", "BATCH-240524-A", 1, 4, 8)
+    db_connection.update_inventory("FUR-TBL-M-BR-001", "BATCH-240524-A", 1, 4, 2)
 
-    #for productID, quantity in [[1, 20], [3, 10], [5, 3]]:
-    #    db_connection.create_salesOrder(productID, quantity)
+    db_connection.create_salesOrder()
+    db_connection.create_salesOrder()
+    db_connection.create_salesOrder()
 
-    #for saleNo, productNo, quantity in [
-    #    [f"SALE-{date.today().strftime('%y%m%d')}-A", "FUR-CHR-M-BR-001", 20],
-    #    [f"SALE-{date.today().strftime('%y%m%d')}-B", "FUR-CHR-M-BL-001", 10],
-    #    [f"SALE-{date.today().strftime('%y%m%d')}-C", "FUR-SOF-L-GR-001", 3]
-    #]:
-    #    db_connection.add_salesOrder(saleNo,productNo,quantity)
-    #print(db_connection.query_salesOrder_table())
+    for saleNo, productID, quantity in [[f"SALE-{date.today().strftime('%y%m%d')}-A", 1, 20],
+                                        [f"SALE-{date.today().strftime('%y%m%d')}-A", 3, 10],
+                                        [f"SALE-{date.today().strftime('%y%m%d')}-B", 5, 3],
+                                        [f"SALE-{date.today().strftime('%y%m%d')}-C", 1, 4],
+                                        [f"SALE-{date.today().strftime('%y%m%d')}-C", 2, 2],
+                                        [f"SALE-{date.today().strftime('%y%m%d')}-C", 3, 5]]:
+        db_connection.add_salesOrder(saleNo, productID, quantity)
+
+    db_connection.validate_salesOrder(f"SALE-{date.today().strftime('%y%m%d')}-C (Not Paid)")
+    for productNo, batchNo, qty in [
+        ["FUR-CHR-M-BR-001", "BATCH-240526-A", 4],
+        ["FUR-CHR-M-BL-001", "BATCH-240524-A", 5],
+        ["FUR-TBL-M-BR-001", "BATCH-240524-A", 2]
+    ]:
+        db_connection.update_salesOrder(f"SALE-{date.today().strftime('%y%m%d')}-C", productNo, batchNo, qty)
+
+    db_connection.update_salesOrder_delivery(f"SALE-{date.today().strftime('%y%m%d')}-C")
+
+    print(db_connection.query_salesOrder_table())
 
     db_connection.add_notification(1, "Admin only noti")
     db_connection.add_notification(2, "Supervisor noti")

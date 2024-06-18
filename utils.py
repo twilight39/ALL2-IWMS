@@ -25,13 +25,20 @@ class fonts:
             "header1": tkinter.font.Font(family="Zilla Slab", size=50, weight="bold"),
             "header2": tkinter.font.Font(family="Zilla Slab", size=45, weight="bold"),
             "header3": tkinter.font.Font(family="Noto Sans", size=35, weight="bold"),
+            "header4": tkinter.font.Font(family="Lexend", size=24, weight="bold"),
+            "header5": tkinter.font.Font(family="Lexend", size=32, weight="normal"),
+            "header6": tkinter.font.Font(family="Lexend", size=50, weight="normal"),
             "regular": tkinter.font.Font(family="Noto Sans", size=18, weight="bold"),
             "regular2": tkinter.font.Font(family="Inter", size=18, weight="bold"),
             "regular3": tkinter.font.Font(family="Inter", size=18, weight="normal"),
             "regular4": tkinter.font.Font(family="Lexend", size=16, weight="bold"),
+            "regular5": tkinter.font.Font(family="Inter", size=60, weight="normal"),
             "thin1": tkinter.font.Font(family="Inter", size=14, weight="normal"),
             "thin2": tkinter.font.Font(family="Lexend", size=14, weight="normal"),
             "thin3": tkinter.font.Font(family="Zilla Slab", size=14, weight="bold"),
+            "thin4": tkinter.font.Font(family="Lexend", size=9, weight="normal"),
+            "thin5": tkinter.font.Font(family="Zilla Slab", size=12, weight="bold"),
+            "thin6": tkinter.font.Font(family="Lexend", size=12, weight="normal"),
             "error": tkinter.font.Font(family="Lexend", size=11, slant="italic")
         }
 

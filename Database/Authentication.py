@@ -4,7 +4,7 @@ import sqlite3
 
 import bcrypt
 
-from Database.Database import singleton, DatabaseConnection
+from Database import singleton, DatabaseConnection
 
 
 @singleton

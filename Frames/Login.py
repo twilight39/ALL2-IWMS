@@ -2,9 +2,8 @@ import tkinter
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image
 
-import Database.Authentication
 from utils import previewText, validation, fonts
-from Database import Database
+from Database import Database, authentication
 from configuration import Configuration
 
 class Login(tkinter.Canvas):
@@ -39,7 +38,7 @@ class Login(tkinter.Canvas):
 
         # References
         self.styleObj = master.style
-        self.auth = Database.Authentication.authentication()
+        self.auth = authentication()
         self.onLogin_callback = onLogin_callback
 
         # Validation & Fonts Object & Colors
