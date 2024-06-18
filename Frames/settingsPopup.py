@@ -197,7 +197,7 @@ class SettingsPopup(ttk.window.Toplevel):
                 toplevel.destroy()
 
         toplevel = popup(self, "Change Password", 2)
-        toplevel.frameList[0].configure(padding=10, bootstyle="light")
+        toplevel.frameList[0].configure(padding=10, style="TFrame")
         valObj = validation()
 
         for i, e in enumerate(["New Password", "Confirm Password"]):
