@@ -7,9 +7,10 @@ from PIL import Image, ImageTk
 from Frames.notificationFrame import notificationFrame
 from configuration import Configuration
 
+
 class pageFrame(ttk.Frame, ABC):
 
-    def __init__(self, master: ttk.Window, title: str, button_config: dict, role: str) -> None:
+    def __init__(self, master: ttk.Window, title: str, button_config: dict, role: str, employeeID: int) -> None:
         """
         Abstract base class of a page frame.
 
@@ -28,14 +29,15 @@ class pageFrame(ttk.Frame, ABC):
         # Create references
         self.masterWindow = master
         self.button_config = button_config
+        self.employeeID = employeeID
         self.role = role
         self.styleObj = ttk.style.Style.get_instance()
         self.font = fonts()
-        self.config= Configuration()
+        self.config = Configuration()
         graphicsPath = self.config.getGraphicsPath()
         self.images = [
             Image.open(f'{graphicsPath}/notificationIcon.png').resize((50, 50))
-            ]
+        ]
         self.imageObject = []
         for im in self.images:
             self.imageObject += [ImageTk.PhotoImage(image=im)]
@@ -54,7 +56,8 @@ class pageFrame(ttk.Frame, ABC):
         # Top Frame Widgets
         productLabel = ttk.Label(topFrame, text=title, font=self.font.fonts["header3"])
         self.styleObj.configure(style="light.TButton", background="white", borderwidth=0)
-        notificationButton = ttk.Button(topFrame, image=self.imageObject[0], bootstyle="light", command=lambda: notificationFrame(self.masterWindow, self.role))
+        notificationButton = ttk.Button(topFrame, image=self.imageObject[0], bootstyle="light",
+                                        command=lambda: notificationFrame(self.masterWindow, self.employeeID))
         productLabel.grid(row=1, column=1, sticky="nw", padx=20, pady=20)
         notificationButton.grid(row=1, column=2, sticky="nes")
 
@@ -77,16 +80,18 @@ class pageFrame(ttk.Frame, ABC):
         )
         self.tableview.grid(row=1, column=1, sticky="nwes")
 
-        y_scrollbar = ttk.Scrollbar(bottomFrame, orient="vertical", command=self.tableview.winfo_children()[1].yview, bootstyle="secondary-round")
+        y_scrollbar = ttk.Scrollbar(bottomFrame, orient="vertical", command=self.tableview.winfo_children()[1].yview,
+                                    bootstyle="secondary-round")
         y_scrollbar.grid(row=1, column=2, sticky="ns")
 
         bottomFrame.rowconfigure(1, weight=1)
         bottomFrame.columnconfigure(1, weight=1)
 
-    def _create_buttons(self, buttonFrame:ttk.Frame) -> None:
+    def _create_buttons(self, buttonFrame: ttk.Frame) -> None:
         self.styleObj.configure(style="warning.TButton", font=self.font.get_font("regular2"), foreground="black")
         for col, button_text in enumerate(self.button_config.get(self.role, []), start=1):
-            button = ttk.Button(buttonFrame, text=button_text, bootstyle="warning", command=lambda x=button_text: self.getButtonCommand(x))
+            button = ttk.Button(buttonFrame, text=button_text, bootstyle="warning",
+                                command=lambda x=button_text: self.getButtonCommand(x))
             button.grid(row=1, column=col, sticky="nwes", padx=5)
 
         buttonFrame.rowconfigure(1, weight=1)
@@ -95,10 +100,10 @@ class pageFrame(ttk.Frame, ABC):
         buttonFrame.columnconfigure(tuple(range(1, len(self.button_config.get(self.role, [])) + 1)), weight=1)
 
     @abstractmethod
-    def _insert_table_headings(self, colNames:list) -> None:
+    def _insert_table_headings(self, colNames: list) -> None:
         pass
 
-    def _insert_table_columns(self, colName:str) -> None:
+    def _insert_table_columns(self, colName: str) -> None:
         self.tableview.insert_column(
             index="end",
             text=colName,
@@ -106,7 +111,7 @@ class pageFrame(ttk.Frame, ABC):
             stretch=True
         )
 
-    def _load_table_rows(self, rowList:list) -> None:
+    def _load_table_rows(self, rowList: list) -> None:
         self.tableview.delete_rows()
         for list in rowList:
             self.tableview.insert_row('end', list)
@@ -115,5 +120,3 @@ class pageFrame(ttk.Frame, ABC):
     @abstractmethod
     def getButtonCommand(self, button_text):
         pass
-
-

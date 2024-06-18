@@ -6,7 +6,7 @@ from Frames.popup import popup
 
 class vendorFrame(pageFrame):
 
-    def __init__(self, master: ttk.Window, role: str) -> None:
+    def __init__(self, master: ttk.Window, role: str, employeeID: int) -> None:
 
         # Inherits Page Frame
         super().__init__(master=master,
@@ -15,7 +15,7 @@ class vendorFrame(pageFrame):
                          button_config={
                              "Supervisor": ["Add", "Update", "Delete"],
                              "Administrator": ["Add", "Update", "Delete"]
-                         })
+                         }, employeeID=employeeID)
 
         # Inserts Tableview columns
         colNames = ["Vendor ID", "Vendor Name", "Email", "Contact Number"]
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = vendorFrame(window, "Administrator")
+    rFrame = vendorFrame(window, "Administrator", 1)
     lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 

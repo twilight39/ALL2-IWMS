@@ -74,9 +74,9 @@ class DatabaseConnection:
         self.cursor.execute("""SELECT WorkerID || ' - ' || Name FROM Workers WHERE RoleID = 3""")
         return [value for value in self.cursor.fetchall()[0]]
 
-    def query_notification(self, employeeID: int) -> list:
+    def query_notification(self, role: str) -> list:
         try:
-            self.cursor.execute("SELECT RoleID FROM Workers WHERE WorkerID = ?", (employeeID,))
+            self.cursor.execute("""SELECT RoleID From Roles WHERE RoleName = ?""", (role,))
             roleID = self.cursor.fetchone()[0]
             notifications = []
 
@@ -92,16 +92,18 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
-    def add_notification(self, roleID: int, message: str) -> bool:
+    def add_notification(self, role: str, message: str) -> int:
         try:
+            self.cursor.execute("""SELECT RoleID From Roles WHERE RoleName = ?""", (role,))
+            roleID = self.cursor.fetchone()[0]
             self.cursor.execute("""INSERT INTO Notification (RoleID, Timestamp, NotificationDesc)
                 VALUES (?, ?, ?)""", (roleID, datetime.now(), message,))
             self.connection.commit()
-            return True
+            return self.cursor.lastrowid
 
         except sqlite3.Error as err:
             print(f"Error: {err}")
-            return False
+            return -1
 
     def delete_notification(self, notificationID: int) -> bool:
         try:

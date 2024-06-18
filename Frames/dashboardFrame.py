@@ -9,13 +9,14 @@ from Frames.notificationFrame import notificationFrame
 
 
 class DashboardFrame(ttk.Frame):
-    def __init__(self, master: ttk.window.Window, role: str):
+    def __init__(self, master: ttk.window.Window, role: str, employeeID: int):
         # Inherit ttk.Frame
         super().__init__(master)
         self.grid(row=0, column=1, sticky="nwes")
 
         # Create references
         self.masterWindow = master
+        self.employeeID = employeeID
         self.role = role
         self.styleObj = ttk.style.Style.get_instance()
         self.font = fonts()
@@ -48,7 +49,7 @@ class DashboardFrame(ttk.Frame):
         dashboard_label = ttk.Label(top_frame, text="Dashboard", font=self.font.fonts["header3"])
         self.styleObj.configure(style="light.TButton", background="white", borderwidth=0)
         notificationButton = ttk.Button(top_frame, image=self.imageObject[0], bootstyle="light",
-                                        command=lambda: notificationFrame(self.masterWindow, self.role))
+                                        command=lambda: notificationFrame(self.masterWindow, self.employeeID))
         dashboard_label.grid(row=1, column=1, sticky="nw", padx=20, pady=20)
         notificationButton.grid(row=1, column=2, sticky="nes")
 

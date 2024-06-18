@@ -4,7 +4,7 @@ from Frames.popup import popup
 
 class purchaseOrderFrame(pageFrame):
 
-    def __init__(self, master: ttk.Window, role: str) -> None:
+    def __init__(self, master: ttk.Window, role: str, employeeID: int) -> None:
 
         # Inherits Page Frame
         super().__init__(master=master,
@@ -13,7 +13,8 @@ class purchaseOrderFrame(pageFrame):
                          button_config={
                              "Supervisor": ["Create", "Update", "Delete"],
                              "Administrator": ["Create", "Update", "Delete"]
-                         })
+                         },
+                         employeeID=employeeID)
 
         # Inserts Tableview columns
         colNames = ["Purchase No", "Product Name", "Quantity Bought", "Batch Number ID", "Vendor Name", "Date", "Status"]
@@ -276,7 +277,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = purchaseOrderFrame(window, "Administrator")
+    rFrame = purchaseOrderFrame(window, "Administrator", 1)
     lFrame = navigationFrame(window, 1, rFrame)
     #rFrame.createPopup()
 

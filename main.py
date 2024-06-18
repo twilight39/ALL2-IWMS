@@ -16,7 +16,7 @@ def main():
         db_connection = DatabaseConnection()
         employeeID = db_connection.query_employee_login(email)
         lFrame=navigationFrame(window, employeeID, ttk.Frame())
-        lFrame.getButtonCommand("Inventory")
+        lFrame.getButtonCommand("Dashboard")
         window.rowconfigure(0, weight=1)
         window.columnconfigure(0, weight=1, minsize=200)
         window.columnconfigure(1, weight=20)

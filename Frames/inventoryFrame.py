@@ -8,7 +8,7 @@ from Frames.popup import popup
 
 class inventoryFrame(pageFrame):
 
-    def __init__(self, master: ttk.Window, role: str) -> None:
+    def __init__(self, master: ttk.Window, role: str, employeeID: int) -> None:
 
         # Inherits Page Frame
         super().__init__(master=master,
@@ -18,7 +18,8 @@ class inventoryFrame(pageFrame):
                              "Worker": ["Receive", "Update", "Delete"],
                              "Supervisor": ["Receive", "Update", "Delete"],
                              "Administrator": ["Receive", "Update", "Delete"]
-                         })
+                         },
+                         employeeID=employeeID)
 
         # Inserts Tableview columns
         colNames = ["Inventory ID", "Product No","Name", "Description", "Quantity", "Location", "Batch Number ID"]
@@ -286,7 +287,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = inventoryFrame(window, "Worker")
+    rFrame = inventoryFrame(window, "Worker", employeeID=3)
     lFrame = navigationFrame(window, 3, rFrame)
     #rFrame.createPopup()
 

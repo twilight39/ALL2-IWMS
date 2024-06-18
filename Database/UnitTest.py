@@ -88,13 +88,14 @@ def populateTestTable(db_connection:DatabaseConnection):
 
     print(db_connection.query_salesOrder_table())
 
-    db_connection.add_notification(1, "Admin only noti")
-    db_connection.add_notification(2, "Supervisor noti")
-    db_connection.add_notification(3, "Worker noti 1")
-    db_connection.add_notification(3, "Worker noti 2")
+    db_connection.add_notification("Administrator", "Admin only noti")
+    db_connection.add_notification("Supervisor", "Supervisor noti")
+    db_connection.add_notification("Worker", "Worker noti 1")
+    db_connection.add_notification("Worker", """Worker noti 2 with extremely long text for testing purposes
+     aaAaaAaaAaaAaaAaaAaaAaaAaaAaaAaaAaa""")
 
-    print(f"Worker Visible Notifications: {db_connection.query_notification(3)}")
-    print(f"Admin Visible Notifications: {db_connection.query_notification(1)}")
+    print(f"Worker Visible Notifications: {db_connection.query_notification('Worker')}")
+    print(f"Admin Visible Notifications: {db_connection.query_notification('Administrator')}")
 
 def authTest():
     auth = authentication()

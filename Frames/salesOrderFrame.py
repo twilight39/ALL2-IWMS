@@ -11,7 +11,7 @@ from Frames.popup import popup
 
 class salesOrderFrame(pageFrame):
 
-    def __init__(self, master: ttk.Window, role: str) -> None:
+    def __init__(self, master: ttk.Window, role: str, employeeID: int) -> None:
 
         # Inherits Page Frame
         super().__init__(master=master,
@@ -20,7 +20,7 @@ class salesOrderFrame(pageFrame):
                          button_config={
                              "Supervisor": ["Add","Update",  "Delete", "Validate"],
                              "Administrator": ["Add", "Update", "Delete", "Validate"]
-                         })
+                         }, employeeID=employeeID)
 
         # Inserts Tableview columns
         colNames = ["Sale No.", "Product Sold", "Quantity", "Batch No.", "Date", "Status"]
@@ -431,7 +431,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = salesOrderFrame(window, "Administrator")
+    rFrame = salesOrderFrame(window, "Administrator", 1)
     lFrame = navigationFrame(window, employeeID=1, rFrame=rFrame)
     #rFrame.validatePopup()
     #rFrame.createPopup()

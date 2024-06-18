@@ -43,3 +43,14 @@ class TestConfiguration:
         with open(configuration.config_file_path, "r") as f:
             data = json.load(f)
         assert '-1' not in data["user_preferences"]["user_id"]
+
+    def test_write_notification_exclusions(self, configuration):
+        configuration.writeNotificationExclusions('-1', '1')
+        configuration.writeNotificationExclusions('-1', '3')
+        assert configuration.getNotificationExclusions('-1') == ['1', '3']
+
+    def test_delete_notification_exclusions(self, configuration):
+        configuration.deleteNotificationExclusions('-1')
+        assert configuration.getNotificationExclusions('-1') == []
+
+

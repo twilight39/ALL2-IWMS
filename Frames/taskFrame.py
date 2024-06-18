@@ -4,7 +4,7 @@ from Frames.popup import popup
 
 class taskFrame(pageFrame):
 
-    def __init__(self, master: ttk.Window, role: str) -> None:
+    def __init__(self, master: ttk.Window, role: str, employeeID: int) -> None:
 
         # Inherits Page Frame
         super().__init__(master=master,
@@ -14,7 +14,7 @@ class taskFrame(pageFrame):
                              "Worker": ["Update"],
                              "Supervisor": ["Create", "Update", "Batch Assign", "Delete"],
                              "Administrator": ["Create", "Update", "Batch Assign", "Delete"]
-                         })
+                         }, employeeID=employeeID)
 
         # Inserts Tableview columns
         colNames = ["Task ID", "Task Batch", "Employee Name", "Description", "Progress", "ETA"]
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = taskFrame(window, "Administrator")
+    rFrame = taskFrame(window, "Administrator", 1)
     lFrame = navigationFrame(window, 1, rFrame)
 
     #rFrame.createPopup()

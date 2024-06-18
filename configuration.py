@@ -45,15 +45,16 @@ class Configuration:
             data = json.load(f)
 
         try:
-            test = data["user_preferences"]["user_id"][str(employee_id)]
+            test = data["user_preferences"]["user_id"][str(employee_id)]["profile_picture"]
+            test = data["user_preferences"]["user_id"][str(employee_id)]["theme_name"]
             if profile_picture != "default":
                 data["user_preferences"]["user_id"][str(employee_id)]["profile_picture"] = profile_picture
             if theme_name != "default":
                 data["user_preferences"]["user_id"][str(employee_id)]["theme_name"] = theme_name
 
         except KeyError:
-            data["user_preferences"]["user_id"][str(employee_id)] = {"profile_picture": "user_1a",
-                                                                     "theme_name": "litera"}
+            data["user_preferences"]["user_id"][str(employee_id)]["profile_picture"] = "user_1a"
+            data["user_preferences"]["user_id"][str(employee_id)]["theme_name"] = "litera"
 
         with open(self.config_file_path, "w") as f:
             json.dump(data, f, indent=4)
@@ -64,13 +65,56 @@ class Configuration:
 
         try:
             del data["user_preferences"]["user_id"][str(employee_id)]
-            print(data['user_preferences']['user_id'])
             with open(self.config_file_path, "w") as f:
                 json.dump(data, f, indent=4)
 
         except KeyError:
             print('key error')
             return
+
+    def getNotificationExclusions(self, employee_id: str) -> list:
+        try:
+            with open(self.config_file_path, "r") as f:
+                data = json.load(f)
+            return data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"]
+
+        except KeyError:
+            self.writeNotificationExclusions(str(employee_id))
+            return self.getNotificationExclusions(str(employee_id))
+
+    def writeNotificationExclusions(self, employee_id: str, notification_id: str = None):
+        with open(self.config_file_path, "r") as f:
+            data = json.load(f)
+
+        try:
+            test = data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"]
+            if notification_id in test or notification_id is None:
+                pass
+            else:
+                data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"].append(str(notification_id))
+
+        except KeyError:
+            if notification_id is None:
+                data["user_preferences"]["user_id"][str(employee_id)] = {"exclude_notifications": []}
+            else:
+                data["user_preferences"]["user_id"][str(employee_id)] = {"exclude_notifications": [notification_id]}
+
+        with open(self.config_file_path, "w") as f:
+            json.dump(data, f, indent=4)
+
+    def deleteNotificationExclusions(self, employee_id: str):
+        with open(self.config_file_path, "r") as f:
+            data = json.load(f)
+
+        try:
+            test = data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"]
+            data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"] = []
+
+        except KeyError:
+            return
+
+        with open(self.config_file_path, "w") as f:
+            json.dump(data, f, indent=4)
 
     def _updatePaths(self) -> None:
         try:
@@ -102,7 +146,9 @@ class Configuration:
 
 if __name__ == "__main__":
     obj1 = Configuration()
-    print(obj1.getPreferences('1'))
+    #obj1.writePreferences('1', "user_3a", theme_name="pulse")
+    #print(obj1.getPreferences('1'))
     # obj1.deletePreferences('1')
-    #obj1.writePreferences('-1', theme_name="flatly")
+    # obj1.writeNotificationExclusions('-1', '5')
+    print(obj1.getNotificationExclusions('1'))
 

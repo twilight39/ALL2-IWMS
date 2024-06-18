@@ -1,3 +1,5 @@
+import re
+
 import ttkbootstrap as ttk
 from PIL import ImageTk, Image, ImageDraw
 
@@ -117,8 +119,6 @@ class navigationFrame(ttk.Frame):
         else:
             southFrame.rowconfigure(8, weight=1)
 
-        self.rFrame = inventoryFrame(self.master, self.role)
-
         # Debugging
         # self.bind("<Configure>", lambda event: print(self.winfo_width()))
         # print(dashboardButton['style'])
@@ -132,36 +132,50 @@ class navigationFrame(ttk.Frame):
     def getButtonCommand(self, button_text):
         if button_text == "Dashboard":
             self.rFrame.destroy()
-            self.rFrame = DashboardFrame(self.master, self.role)
+            self.rFrame = DashboardFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Product":
             self.rFrame.destroy()
-            self.rFrame = productFrame(self.master, self.role)
+            self.rFrame = productFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Inventory":
             self.rFrame.destroy()
-            self.rFrame = inventoryFrame(self.master, self.role)
+            self.rFrame = inventoryFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Purchase Order":
             self.rFrame.destroy()
-            self.rFrame = purchaseOrderFrame(self.master, self.role)
+            self.rFrame = purchaseOrderFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Sales Order":
             self.rFrame.destroy()
-            self.rFrame = salesOrderFrame(self.master, self.role)
+            self.rFrame = salesOrderFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Tasks":
             self.rFrame.destroy()
-            self.rFrame = taskFrame(self.master, self.role)
+            self.rFrame = taskFrame(self.master, self.role, self.employeeID)
 
         elif button_text == "Vendor":
             self.rFrame.destroy()
-            self.rFrame = vendorFrame(self.master, self.role)
+            self.rFrame = vendorFrame(self.master, self.role, self.employeeID)
 
     def redisplay_theme(self):
+        jesus = {
+            ".!dashboardframe": "Dashboard",
+            ".!productframe": "Product",
+            ".!inventoryframe": "Inventory",
+            ".!purchaseorderframe": "Purchase Order",
+            ".!salesorderframe": "Sales Order",
+            ".!taskframe": "Tasks",
+            ".!vendorframe": "Vendor"
+        }
+        for crucifix in jesus:
+            if re.search(r".![a-z]+", str(self.rFrame)).group() == crucifix:
+                frame = jesus[crucifix]
+                break
+        self.rFrame.destroy()
         self.destroy()
-        navigationFrame(self.master, self.employeeID, self.rFrame)
-        # self.destroy()
+        new = navigationFrame(self.master, self.employeeID, self.rFrame)
+        new.getButtonCommand(frame)
 
     def make_circular_image(self, image_path, output_diameter):
 
@@ -191,7 +205,8 @@ if __name__ == "__main__":
 
     # Creates Navigation Frame
     rFrame = ttk.Frame(window)
-    lFrame = navigationFrame(window, 3, rFrame)
+    lFrame = navigationFrame(window, 1, rFrame)
+    lFrame.getButtonCommand("Inventory")
     lFrame.redisplay_theme()
 
 

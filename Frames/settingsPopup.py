@@ -104,8 +104,8 @@ class SettingsPopup(ttk.window.Toplevel):
         ttk.Frame(self.accounts_frame, height=25).grid(row=4, column=0, sticky="ns")
         ttk.Label(self.accounts_frame, text=f"Email: {email}", font=self.font.get_font('thin1')).grid(row=5, column=0)
         self.styleObj.configure('font.primary.Link.TButton', font=self.font.get_font('thin2'))
-        ttk.Button(self.accounts_frame, text=f"Change Password", style='font.primary.Link.TButton').grid(
-            row=6, column=0)
+        ttk.Button(self.accounts_frame, text=f"Change Password", style='font.primary.Link.TButton',
+                   command=lambda: self.reset_password()).grid(row=6, column=0)
         if role == "Administrator":
             self.styleObj.configure('font.danger.Link.TButton', font=self.font.get_font('thin2'))
             ttk.Button(self.accounts_frame, text="Update Accounts", style='font.danger.Link.TButton',
@@ -327,10 +327,9 @@ class SettingsPopup(ttk.window.Toplevel):
 
 if __name__ == '__main__':
     # Create Main Window, and center it
-    window = ttk.Window(title="Keai IWMS", themename="litera", size=(1280, 720))
+    window = ttk.Window(title="Keai IWMS", themename="flatly", size=(1280, 720))
     window.withdraw()
 
-    SettingsPopup(window, 1).reset_password()
-
+    SettingsPopup(window, 1)
     # Starts Event Main Loop
     window.mainloop()
