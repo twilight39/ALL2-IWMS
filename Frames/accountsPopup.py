@@ -3,7 +3,8 @@ from ttkbootstrap.tableview import Tableview
 from PIL import ImageTk, Image
 
 from utils import fonts, previewText, validation
-from Database.Database import DatabaseConnection, authentication
+from Database.Database import DatabaseConnection
+from Database.Authentication import authentication
 from configuration import Configuration
 from Frames.popup import popup
 

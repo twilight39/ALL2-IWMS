@@ -1,5 +1,6 @@
 import os
-from Database import DatabaseConnection, authentication
+from Database.Database import DatabaseConnection
+from Database.Authentication import authentication
 from datetime import date
 
 def populateTestTable(db_connection:DatabaseConnection):

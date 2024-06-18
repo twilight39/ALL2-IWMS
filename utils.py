@@ -28,8 +28,10 @@ class fonts:
             "regular": tkinter.font.Font(family="Noto Sans", size=18, weight="bold"),
             "regular2": tkinter.font.Font(family="Inter", size=18, weight="bold"),
             "regular3": tkinter.font.Font(family="Inter", size=18, weight="normal"),
+            "regular4": tkinter.font.Font(family="Lexend", size=16, weight="bold"),
             "thin1": tkinter.font.Font(family="Inter", size=14, weight="normal"),
             "thin2": tkinter.font.Font(family="Lexend", size=14, weight="normal"),
+            "thin3": tkinter.font.Font(family="Zilla Slab", size=14, weight="bold"),
             "error": tkinter.font.Font(family="Lexend", size=11, slant="italic")
         }
 

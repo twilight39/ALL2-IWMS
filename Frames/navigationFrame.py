@@ -12,6 +12,7 @@ from Frames.salesOrderFrame import salesOrderFrame
 from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
 from Frames.settingsPopup import SettingsPopup
+from Frames.dashboardFrame import DashboardFrame
 
 
 class navigationFrame(ttk.Frame):
@@ -129,11 +130,15 @@ class navigationFrame(ttk.Frame):
         #KEAILabel.configure(relief="sunken")
 
     def getButtonCommand(self, button_text):
-        if button_text == "Product":
+        if button_text == "Dashboard":
+            self.rFrame.destroy()
+            self.rFrame = DashboardFrame(self.master, self.role)
+
+        elif button_text == "Product":
             self.rFrame.destroy()
             self.rFrame = productFrame(self.master, self.role)
 
-        if button_text == "Inventory":
+        elif button_text == "Inventory":
             self.rFrame.destroy()
             self.rFrame = inventoryFrame(self.master, self.role)
 

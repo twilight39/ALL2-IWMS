@@ -11,7 +11,8 @@ import time
 from Frames.accountsPopup import AccountsPopup
 from Frames.popup import popup
 from utils import fonts, Configuration, previewText, validation
-from Database.Database import DatabaseConnection, authentication
+from Database.Database import DatabaseConnection
+from Database.Authentication import authentication
 
 
 class LRUCache(OrderedDict):
