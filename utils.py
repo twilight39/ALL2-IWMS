@@ -239,7 +239,7 @@ class validation:
             self.errText[event.widget].set("Product No. already in use")
             return False
 
-        elif re.match("^FUR-[A-Z]{3}-[A-Z]-[A-Z]{2}-[\d]{3}$", event.postchangetext):
+        elif re.match("^[A-Z]{3}-[A-Z]{3}-[A-Z]-[A-Z]{2}-[\d]{3}$", event.postchangetext):
             self.errText[event.widget].set("")
             return True
 

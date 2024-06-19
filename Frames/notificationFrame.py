@@ -100,6 +100,7 @@ class notificationFrame(ttk.Frame):
             frame.columnconfigure(2, weight=1)
 
             bottomFrame.rowconfigure(i, weight=1)
+        ttk.Frame(bottomFrame, width=8).grid(row=0, column=2)
         bottomFrame.columnconfigure(0, weight=0)
         bottomFrame.columnconfigure(1, weight=1)
 

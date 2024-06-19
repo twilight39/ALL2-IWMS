@@ -1,5 +1,5 @@
 from Frames.pageFrame import *
-from Database.Database import DatabaseConnection
+from Database import DatabaseConnection, Notification
 
 from Frames.popup import popup
 
@@ -49,7 +49,7 @@ class productFrame(pageFrame):
         def onSubmitButton():
             parameters = [i.get() for i in toplevel.stringVar]
             parameters[-1] = parameters[-1].split(' - ')[0]
-            print(parameters)
+            # print(parameters)
             if not self.db_connection.add_product(*parameters):
                 toplevel.errVar[-1].set("Submission failed to process")
             else:
@@ -118,7 +118,7 @@ class productFrame(pageFrame):
                 toplevel.destroy()
 
         # Creates Widgets
-        toplevel.create_title_frame(frame=toplevel.frameList[0], title="Create Product")
+        toplevel.create_title_frame(frame=toplevel.frameList[0], title="Update Product")
         for index, key in enumerate(["Product No.", "Name", "Description", "Price (RM)", "Preferred Vendor"]):
             toplevel.create_label(frame=toplevel.frameList[index + 1], label=key)
             toplevel.create_errMsg(frame=toplevel.frameList[index + 1], errVar=toplevel.errVar[index])
@@ -127,6 +127,7 @@ class productFrame(pageFrame):
         toplevel.create_combobox(frame=toplevel.frameList[5], stringVar=toplevel.stringVar[4], options=vendors)
         toplevel.create_buttonbox(frame=toplevel.frameList[6])
         toplevel.submitButton.configure(command= lambda: onSubmitButton())
+        toplevel.entries[0].configure(state="readonly")
 
         # Preview Text
         previewText(toplevel.entries[0], key="productNoEntry")
@@ -141,7 +142,7 @@ class productFrame(pageFrame):
 
         # Validation
         valObj = validation()
-        for index, key in enumerate(["productNo", "string", "string", "price", "vendor"]):
+        for index, key in enumerate(["string", "string", "price", "vendor"], start=1):
             valObj.validate(widget=toplevel.entries[index], key=key, errStringVar=toplevel.errVar[index])
 
         # Bindings
@@ -176,8 +177,8 @@ if __name__ == "__main__":
     window.columnconfigure(1, weight=20)
 
     # Creates Frames
-    rFrame = productFrame(window, "Administrator", 1)
-    lFrame = navigationFrame(window, 1, rFrame)
+    lFrame = navigationFrame(window, 1, ttk.Frame())
+    lFrame.getButtonCommand("Product")
     #rFrame.createPopup()
 
     # Starts Event Main Loop

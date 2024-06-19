@@ -11,7 +11,7 @@ class TestNotification:
 
     @pytest.fixture(scope="class", autouse=True)
     def notification_id(self, notification):
-        notification_id = notification.write_notification("Supervisor", "Supervisor level message unique")
+        notification_id = notification._write_notification("Supervisor", "Supervisor level message unique")
         yield notification_id
         notification.__delete_notification__(notification_id)
 

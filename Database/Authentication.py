@@ -1,8 +1,8 @@
 import base64
 import hashlib
 import sqlite3
-
 import bcrypt
+from loguru import logger
 
 from Database import singleton, DatabaseConnection
 
@@ -23,6 +23,8 @@ class authentication:
         except:
             return False
         if bcrypt.checkpw(base64.b64encode(hashlib.sha256(password.encode()).digest()), hashed):
+            employee_id = self.db_connection.query_employee_login(email)
+            self.db_connection.log_employee(employee_id)
             return True
         return False
 
@@ -69,3 +71,7 @@ class authentication:
         except sqlite3.Error as e:
             print(f"Error:{e}")
             return False
+
+
+if __name__ == '__main__':
+    authentication().authenticate("ahmad@gmail.com", "admin1234")

@@ -2,9 +2,11 @@ import re
 import sqlite3
 import os
 from datetime import date, datetime
+from loguru import logger
+import json
+from ttkbootstrap.toast import ToastNotification
 
 from configuration import Configuration
-
 
 def singleton(cls):
     """Decorator to create a singleton class."""
@@ -17,7 +19,6 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         #print(f"Returning this instance: {str(instances[cls])}" )
         return instances[cls]
-
     return wrapper
 
 
@@ -42,12 +43,50 @@ class DatabaseConnection:
         self.cursor.execute("PRAGMA foreign_keys = ON;")
         self.connection.commit()
 
+        logger.add(f"{self.config.repo_file_path}/Database/Database.log", retention="3 months", filter=self.log_filter,
+                   format="{time:YYYY-MM-DD HH:mm:ss} | {extra[event]} Event | Employee ID: {extra[id]} | {level}")
+        self.logger: logger = logger.bind(id='1', placeholder="")
+        self.employeeID = 1
+
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.connection:
             self.connection.close()
+
+    def log_filter(self, record):
+        self.create_notification(record["extra"]["event"], record["extra"]["placeholder"])
+        return True
+
+    def log_employee(self, employee_id):
+        """
+        1. Create a logger, and log the employee ID when login occurs
+        2. Bind the employee ID to the DatabaseConnection Class
+        3. Patch functions to write notifications to database as logs are written
+        4. Parse logs to aggregate log information for graphs for GUI
+        """
+        self.logger = logger.bind(id=str(employee_id), placeholder="")
+        self.employeeID = employee_id
+        self.logger.success(f"Successfully authenticated (Employee ID: {employee_id})", event="Authentication",
+                            placeholder="xxx")
+
+    def create_notification(self, notification_key: str, placeholder: str = None):
+        """Creates a new notification. Placeholder is inserted if necessary."""
+        with open(f"{self.config.repo_file_path}/Database/Notifications.json", "r") as f:
+            try:
+                data = json.load(f)[notification_key]
+            except KeyError:
+                return
+
+        if placeholder is not None:
+            data["Message"] = data["Message"].format(placeholder)
+
+        self.add_notification(data["Access"], data["Message"])
+
+        dictionary = {"Worker": 3, "Supervisor": 2, "Administrator": 1}
+        if dictionary[self.query_employee(self.employeeID)[1]] <= dictionary[(data["Access"])]:
+            ToastNotification(title=data["Title"], message=data["Message"], duration=500).show_toast()
 
     def query_accounts_table(self) -> tuple:
         self.cursor.execute("""SELECT w.WorkerID, w.Name, r.RoleName, a.Email, w.ContactNumber
@@ -65,8 +104,10 @@ class DatabaseConnection:
         return self.cursor.fetchone()
 
     def query_employee_login(self, email: str) -> int:
+        """Returns employee ID"""
         self.cursor.execute("""SELECT w.WorkerID FROM Workers w
         INNER JOIN Accounts a ON w.WorkerID = a.WorkerID WHERE a.Email = ?""", (email,))
+
         return self.cursor.fetchone()[0]
 
     def query_worker(self) -> list[str]:
@@ -99,6 +140,7 @@ class DatabaseConnection:
             self.cursor.execute("""INSERT INTO Notification (RoleID, Timestamp, NotificationDesc)
                 VALUES (?, ?, ?)""", (roleID, datetime.now(), message,))
             self.connection.commit()
+
             return self.cursor.lastrowid
 
         except sqlite3.Error as err:
@@ -235,11 +277,14 @@ class DatabaseConnection:
         """Returns parameters for the dashboard meter widget. [Product Types, Product Types in Inventory]"""
         try:
             results = []
-            self.cursor.execute("SELECT COUNT(ProductID) FROM Products")
+            self.cursor.execute("SELECT COALESCE(COUNT(ProductID), 0) FROM Products")
             results.append(int(self.cursor.fetchone()[0]))
-            self.cursor.execute("""SELECT DISTINCT COUNT(ProductID) FROM Inventory WHERE LocationID != '5' GROUP BY
-                                ProductID""")
-            results.append(int(self.cursor.fetchone()[0]))
+            self.cursor.execute("""SELECT DISTINCT COALESCE(COUNT(ProductID), 0) FROM Inventory WHERE LocationID != '5' 
+            GROUP BY ProductID""")
+            try:
+                results.append(int(self.cursor.fetchone()[0]))
+            except TypeError:
+                results.append('0')
             return results
 
         except sqlite3.Error as err:
@@ -271,6 +316,8 @@ class DatabaseConnection:
                 VALUES (?, ?, ?, ?, ?)
                 """, (product_no, product_name, description, price, preferred_supplier_id))
             self.connection.commit()
+            self.logger.success("", event="New Product Added", placeholder=product_name)
+            self.logger.warning("", event="Out of Stock Alert", placeholder=product_name)
             return True
 
         except sqlite3.Error as err:
@@ -378,7 +425,7 @@ class DatabaseConnection:
     def query_stock_quantity(self) -> int:
         """Returns total quantity of stock in inventory"""
         try:
-            self.cursor.execute("""SELECT SUM(StockQuantity) FROM Inventory WHERE LocationID != 5""")
+            self.cursor.execute("""SELECT COALESCE(SUM(StockQuantity), 0) FROM Inventory WHERE LocationID != 5""")
             return self.cursor.fetchone()[0]
 
         except sqlite3.Error as err:
@@ -388,7 +435,7 @@ class DatabaseConnection:
     def query_shipment_quantity(self) -> int:
         """Returns total quantity of stock in shipments"""
         try:
-            self.cursor.execute("""SELECT SUM(Quantity) FROM Shipments WHERE Status != 'Received'""")
+            self.cursor.execute("""SELECT COALESCE(SUM(Quantity), 0) FROM Shipments WHERE Status != 'Received'""")
             return self.cursor.fetchone()[0]
 
         except sqlite3.Error as err:
@@ -454,6 +501,7 @@ class DatabaseConnection:
                     """, (productID, quantity, desLocationID, batchID,))
 
             self.connection.commit()
+            self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductNo = ?""", (productNo,))
             return True
 
         except Exception as err:
@@ -498,6 +546,7 @@ class DatabaseConnection:
             self.cursor.execute("INSERT INTO Suppliers (Name, ContactNumber, Email) VALUES (?, ?, ?)",
                                 (name, contact_number, email))
             self.connection.commit()
+            self.logger.success("", event="New Vendor Created")
             return True
 
         except sqlite3.Error as err:
@@ -666,13 +715,13 @@ class DatabaseConnection:
         """Returns parameters for the dashboard purchase activity frame widget."""
         try:
             results = []
-            self.cursor.execute("""SELECT COUNT(ShipmentID) FROM Shipments""")
+            self.cursor.execute("""SELECT COALESCE(COUNT(ShipmentID), 0) FROM Shipments""")
             results.append(self.cursor.fetchone()[0])
-            self.cursor.execute("""SELECT COUNT(ShipmentID) FROM Shipments WHERE Status = 'In Transit'""")
+            self.cursor.execute("""SELECT COALESCE(COUNT(ShipmentID), 0) FROM Shipments WHERE Status = 'In Transit'""")
             results.append(self.cursor.fetchone()[0])
-            self.cursor.execute("""SELECT COUNT(ShipmentID) FROM Shipments WHERE Status = 'Received'""")
+            self.cursor.execute("""SELECT COALESCE(COUNT(ShipmentID), 0) FROM Shipments WHERE Status = 'Received'""")
             results.append(self.cursor.fetchone()[0])
-            self.cursor.execute("""SELECT SUM(Quantity) FROM Shipments WHERE Status = 'Received'""")
+            self.cursor.execute("""SELECT COALESCE(SUM(Quantity), 0) FROM Shipments WHERE Status = 'Received'""")
             results.append(self.cursor.fetchone()[0])
             return [int(value) for value in results]
 
@@ -735,6 +784,7 @@ class DatabaseConnection:
                             VALUES (?, ?, ?, ?, ?, ?)""",
                                     (shipmentID, productID, quantity, vendorID, date.today(), batchID,))
                 self.connection.commit()
+                self.logger.success("", event="New Purchase Order Created")
                 return True
             else:
                 return False
@@ -947,6 +997,7 @@ class DatabaseConnection:
                 saleNo = self._generateID("SALE-000000-A")
             self.cursor.execute("INSERT INTO Sales (SaleNo, Date) VALUES (?, ?)", (saleNo, date.today(),))
             self.connection.commit()
+            self.logger.success("", event="New Sales Order Created")
             return True
 
         except sqlite3.Error as err:
@@ -1063,6 +1114,18 @@ class DatabaseConnection:
                 #print("3")
             self.cursor.execute("""UPDATE Sales SET Status = 'Delivered' WHERE SaleNo = ?""", (saleNo,))
             self.connection.commit()
+
+            for result in results:
+                self.cursor.execute("""SELECT COALESCE(SUM(i.StockQuantity), 0), p.ProductName
+                FROM Inventory i INNER JOIN Products p ON i.ProductID = p.ProductID
+                WHERE i.LocationID!=5 AND i.ProductID = ?""", (result[0],))
+                product = self.cursor.fetchone()
+                if product[0] == '0':
+                    self.logger.success("", event="Out of Stock Alert", placeholder=product[1])
+                elif product[0] <= 20:
+                    self.logger.success("", event="Stock at Critical Level", placeholder=product[1])
+                elif product[0] <=40:
+                    self.logger.success("", event="Low Stock Alert", placeholder=product[1])
             return True
 
         except sqlite3.Error as err:
@@ -1345,4 +1408,5 @@ if __name__ == "__main__":
     #con.update_task(3, 'Review code for pull request', 2, 'In Progress', '2024-05-27', 'TASK-240611-A')
     #print(con.query_accounts_table())
     #print(con.query_SalesOrder())
-    print(con.query_product_dashboard())
+    #print(con.query_product_dashboard())
+    # logger.info("Connected to Database")
