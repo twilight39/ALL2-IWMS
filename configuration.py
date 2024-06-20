@@ -27,6 +27,10 @@ class Configuration:
         with open(self.config_file_path, "r") as f:
             return json.load(f)["program_files"]["Preview"]
 
+    def getLogFile(self) -> str:
+        with open(self.config_file_path, "r") as f:
+            return json.load(f)["program_files"]["Log"]
+
     def getPreferences(self, employee_id: str) -> tuple[str, str]:
         try:
             with open(self.config_file_path, "r") as f:
@@ -124,7 +128,8 @@ class Configuration:
             data["program_files"] = {
                 "Graphics": f"{self.repo_file_path}/Graphics",
                 "Database": f"{self.repo_file_path}/Database/Database.db",
-                "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json"
+                "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json",
+                "Log": f"{self.repo_file_path}/Database/Database.log"
             }
 
         except FileNotFoundError:
@@ -132,7 +137,8 @@ class Configuration:
                 "program_files": {
                     "Graphics": f"{self.repo_file_path}/Graphics",
                     "Database": f"{self.repo_file_path}/Database/Database.db",
-                    "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json"
+                    "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json",
+                    "Log": f"{self.repo_file_path}/Database/Database.log"
                 },
                 "user_preferences": {
                     "user_id": {

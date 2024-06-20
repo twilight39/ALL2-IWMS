@@ -1,3 +1,4 @@
+from PIL import Image
 import ttkbootstrap as ttk
 from PIL import Image, ImageTk
 
@@ -6,6 +7,9 @@ from configuration import Configuration
 from Database.Database import DatabaseConnection
 
 from Frames.notificationFrame import notificationFrame
+
+# DO NOT REMOVE - alias for Image.Cubic which is deprecated for PIL > 10.0.0, used in ttk.Meter
+Image.CUBIC = Image.BICUBIC
 
 
 class DashboardFrame(ttk.Frame):

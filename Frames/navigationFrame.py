@@ -15,6 +15,7 @@ from Frames.taskFrame import taskFrame
 from Frames.vendorFrame import vendorFrame
 from Frames.settingsPopup import SettingsPopup
 from Frames.dashboardFrame import DashboardFrame
+from Frames.reportsFrame import ReportFrame
 
 
 class navigationFrame(ttk.Frame):
@@ -26,7 +27,7 @@ class navigationFrame(ttk.Frame):
             "Worker": ["Dashboard", "Inventory", "Report"],
             "Supervisor": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor",
                            "Report"],
-            "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor",
+            "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Vendor",
                               "Report"]
         }
 
@@ -157,6 +158,10 @@ class navigationFrame(ttk.Frame):
         elif button_text == "Vendor":
             self.rFrame.destroy()
             self.rFrame = vendorFrame(self.master, self.role, self.employeeID)
+
+        elif button_text == "Report":
+            self.rFrame.destroy()
+            self.rFrame = ReportFrame(self.master, self.role, self.employeeID)
 
     def redisplay_theme(self):
         jesus = {

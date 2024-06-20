@@ -8,6 +8,7 @@ from ttkbootstrap.toast import ToastNotification
 
 from configuration import Configuration
 
+
 def singleton(cls):
     """Decorator to create a singleton class."""
     instances = {}
@@ -19,6 +20,7 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         #print(f"Returning this instance: {str(instances[cls])}" )
         return instances[cls]
+
     return wrapper
 
 
@@ -43,9 +45,13 @@ class DatabaseConnection:
         self.cursor.execute("PRAGMA foreign_keys = ON;")
         self.connection.commit()
 
-        logger.add(f"{self.config.repo_file_path}/Database/Database.log", retention="3 months", filter=self.log_filter,
+        logger.add(f"{self.config.getLogFile()}", retention="3 months",
+                   filter=self.log_notification_filter,
                    format="{time:YYYY-MM-DD HH:mm:ss} | {extra[event]} Event | Employee ID: {extra[id]} | {level}")
-        self.logger: logger = logger.bind(id='1', placeholder="")
+        logger.add(f"{self.config.getLogFile()}", retention="3 months",
+                   filter=self.log_report_filter,
+                   format="""{time:YYYY-MM-DD HH:mm:ss} | {extra[key]} Report | Employee ID: {extra[id]} | {message} | {level}""")
+        self.logger: logger = logger.bind(id='1', placeholder="", type="notification")
         self.employeeID = 1
 
     def __enter__(self):
@@ -55,9 +61,17 @@ class DatabaseConnection:
         if self.connection:
             self.connection.close()
 
-    def log_filter(self, record):
-        self.create_notification(record["extra"]["event"], record["extra"]["placeholder"])
-        return True
+    def log_notification_filter(self, record):
+        if record["extra"]["type"] == "notification":
+            self.create_notification(record["extra"]["event"], record["extra"]["placeholder"])
+            return True
+
+        else:
+            return False
+
+    def log_report_filter(self, record):
+        if record["extra"]["type"] == "report":
+            return True
 
     def log_employee(self, employee_id):
         """
@@ -69,7 +83,48 @@ class DatabaseConnection:
         self.logger = logger.bind(id=str(employee_id), placeholder="")
         self.employeeID = employee_id
         self.logger.success(f"Successfully authenticated (Employee ID: {employee_id})", event="Authentication",
-                            placeholder="xxx")
+                            placeholder="xxx", type="notification")
+
+    def query_product_movement_report(self):
+        pattern = r"(?P<time>\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2} \| " \
+                  r"Product Movement Report \| Employee ID: (?P<employee_id>[0-9]+) \| " \
+                  r"(?P<msg>[\w\s\|-]+) \| INFO"
+        results = []
+        for e in logger.parse(f"{self.config.getLogFile()}", pattern=pattern):
+            results.append([e["time"]] + e["msg"].split(' | ') + ["Done"])
+        return results
+
+    def query_stock_level_report(self) -> list[list[str]]:
+        """Returns: ["Product", "Unit Cost", "Total Value", "On Hand", "Free to Use", "Incoming", "Outgoing"]"""
+        try:
+            self.cursor.execute("""
+            WITH AvailableStock AS (SELECT p.ProductID,
+            COALESCE(SUM(CASE WHEN i.LocationID != 5 THEN i.StockQuantity ELSE 0 END), 0) AS TotalStock
+            FROM Products p LEFT JOIN Inventory i ON p.ProductID = i.ProductID GROUP BY p.ProductID),
+            
+            UndeliveredSales AS (SELECT p.ProductID,
+            SUM(CASE WHEN ss.Status != 'Delivered' THEN si.QuantitySold ELSE 0 END) AS UndeliveredQuantity
+            FROM Products p LEFT JOIN Sales_Inventory si ON p.ProductID = si.ProductID
+            LEFT JOIN Sales ss ON si.SaleID = ss.SaleID GROUP BY p.ProductID)
+            
+            SELECT p.ProductName, p.Price, av.TotalStock * p.Price, av.TotalStock,
+            av.TotalStock - us.UndeliveredQuantity,
+            COALESCE(SUM(CASE WHEN s.Status != 'Received' THEN s.Quantity ELSE 0 END), 0), us.UndeliveredQuantity
+            
+            FROM Products p LEFT JOIN Inventory i ON p.ProductID = i.ProductID
+            LEFT JOIN Shipments s ON p.ProductID = s.ProductID
+            LEFT JOIN AvailableStock av ON p.ProductID = av.ProductID
+            LEFT JOIN UndeliveredSales us ON p.ProductID = us.ProductID
+            GROUP BY p.ProductID
+            """)
+            results = [list(value) for value in self.cursor.fetchall()]
+            for value in results:
+                value[2] = f"{round(float(value[2]), 2):.2f}"
+            return results
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
 
     def create_notification(self, notification_key: str, placeholder: str = None):
         """Creates a new notification. Placeholder is inserted if necessary."""
@@ -316,8 +371,8 @@ class DatabaseConnection:
                 VALUES (?, ?, ?, ?, ?)
                 """, (product_no, product_name, description, price, preferred_supplier_id))
             self.connection.commit()
-            self.logger.success("", event="New Product Added", placeholder=product_name)
-            self.logger.warning("", event="Out of Stock Alert", placeholder=product_name)
+            self.logger.success("", event="New Product Added", placeholder=product_name, type="notification")
+            self.logger.warning("", event="Out of Stock Alert", placeholder=product_name, type="notification")
             return True
 
         except sqlite3.Error as err:
@@ -453,6 +508,12 @@ class DatabaseConnection:
             """, (productID, quantity, 1, batchID,))
             self.cursor.execute("UPDATE Shipments SET Status = ? WHERE ShipmentNo = ?", ("Received", shipmentNo,))
             self.connection.commit()
+
+            self.cursor.execute("SELECT ProductName FROM Products WHERE ProductID = ?", (productID,))
+            name = self.cursor.fetchone()[0]
+            self.cursor.execute("SELECT PBatchNumber FROM Product_Batch WHERE PBatchID = ?", (batchID,))
+            batchNumber = self.cursor.fetchone()[0]
+            self.logger.info(f"{name} | {batchNumber} | Vendor | Input | {quantity}", type="report", key="Product Movement")
             return True
 
         except sqlite3.Error as err:
@@ -502,6 +563,12 @@ class DatabaseConnection:
 
             self.connection.commit()
             self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductNo = ?""", (productNo,))
+            name = self.cursor.fetchone()[0]
+            self.cursor.execute("""SELECT LocationName FROM Locations WHERE LocationID = ? OR LocationID = ?""",
+                                (srcLocationID, desLocationID, ))
+            locations = self.cursor.fetchall()
+            self.logger.info(f"{name} | {batchNumber} | {locations[0][0]} | {locations[1][0]} | {quantity}",
+                             type="report", key="Product Movement")
             return True
 
         except Exception as err:
@@ -546,7 +613,7 @@ class DatabaseConnection:
             self.cursor.execute("INSERT INTO Suppliers (Name, ContactNumber, Email) VALUES (?, ?, ?)",
                                 (name, contact_number, email))
             self.connection.commit()
-            self.logger.success("", event="New Vendor Created")
+            self.logger.success("", event="New Vendor Created", type="notification")
             return True
 
         except sqlite3.Error as err:
@@ -784,7 +851,7 @@ class DatabaseConnection:
                             VALUES (?, ?, ?, ?, ?, ?)""",
                                     (shipmentID, productID, quantity, vendorID, date.today(), batchID,))
                 self.connection.commit()
-                self.logger.success("", event="New Purchase Order Created")
+                self.logger.success("", event="New Purchase Order Created", type="notification")
                 return True
             else:
                 return False
@@ -997,7 +1064,7 @@ class DatabaseConnection:
                 saleNo = self._generateID("SALE-000000-A")
             self.cursor.execute("INSERT INTO Sales (SaleNo, Date) VALUES (?, ?)", (saleNo, date.today(),))
             self.connection.commit()
-            self.logger.success("", event="New Sales Order Created")
+            self.logger.success("", event="New Sales Order Created", type="notification")
             return True
 
         except sqlite3.Error as err:
@@ -1121,12 +1188,20 @@ class DatabaseConnection:
                 WHERE i.LocationID!=5 AND i.ProductID = ?""", (result[0],))
                 product = self.cursor.fetchone()
                 if product[0] == '0':
-                    self.logger.success("", event="Out of Stock Alert", placeholder=product[1])
+                    self.logger.success("", event="Out of Stock Alert", placeholder=product[1], type="notification")
                 elif product[0] <= 20:
-                    self.logger.success("", event="Stock at Critical Level", placeholder=product[1])
-                elif product[0] <=40:
-                    self.logger.success("", event="Low Stock Alert", placeholder=product[1])
+                    self.logger.success("", event="Stock at Critical Level", placeholder=product[1],
+                                        type="notification")
+                elif product[0] <= 40:
+                    self.logger.success("", event="Low Stock Alert", placeholder=product[1], type="notification")
+
+                self.cursor.execute("SELECT PBatchNumber FROM Product_Batch WHERE PBatchID = ?", (result[2],))
+                batchNumber = self.cursor.fetchone()[0]
+                self.logger.info(f"{product[1]} | {batchNumber} | Output | Customer | {result[1]}",
+                                 type="report", key="Product Movement")
             return True
+
+
 
         except sqlite3.Error as err:
             print(f"Delivery Update Error: {err}")
@@ -1409,4 +1484,6 @@ if __name__ == "__main__":
     #print(con.query_accounts_table())
     #print(con.query_SalesOrder())
     #print(con.query_product_dashboard())
-    # logger.info("Connected to Database")
+    #con.logger.info("Test Report Message 2", type="report", key="Traceability")
+    #print(con.query_product_movement_report())
+    print(con.query_stock_level_report())

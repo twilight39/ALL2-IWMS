@@ -134,6 +134,7 @@ def authTest():
 if __name__ == "__main__":
     try:
         os.remove("Database.db")
+        os.remove("Database.log")
     except:
         pass
     con = DatabaseConnection()

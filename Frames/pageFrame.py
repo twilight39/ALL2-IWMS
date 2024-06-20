@@ -101,6 +101,7 @@ class pageFrame(ttk.Frame, ABC):
 
     @abstractmethod
     def _insert_table_headings(self, colNames: list) -> None:
+        """For col in List: self._insert_table_columns(col)"""
         pass
 
     def _insert_table_columns(self, colName: str) -> None:
