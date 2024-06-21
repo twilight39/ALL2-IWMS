@@ -126,6 +126,26 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
+    def query_employee_report(self,employee_id: int | str):
+        """Returns: [Employee ID - Employee Name, Role Name, Email, Contact Number,
+        Total Tasks Assigned, Total Tasks Completed, Total Tasks Overdue]"""
+
+        try:
+            self.cursor.execute("""SELECT w.WorkerID || ' - ' || w.Name, r.RoleName, a.Email, w.ContactNumber,
+            COALESCE(COUNT(t.TaskID), 0), COALESCE(COUNT(CASE WHEN t.TaskStatus = 'Completed' THEN 1 END), 0),
+            COALESCE(COUNT(CASE WHEN t.TaskStatus != 'Completed' THEN 1 END), 0)
+            FROM Workers w INNER JOIN Roles r ON w.RoleID = r.RoleID
+            INNER JOIN Accounts a ON w.WorkerID = a.WorkerID
+            LEFT JOIN Tasks t ON w.WorkerID = t.WorkerID
+            WHERE w.WorkerID = ?
+            GROUP BY w.WorkerID
+            """, (employee_id,))
+            return self.cursor.fetchone()
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
+
     def create_notification(self, notification_key: str, placeholder: str = None):
         """Creates a new notification. Placeholder is inserted if necessary."""
         with open(f"{self.config.repo_file_path}/Database/Notifications.json", "r") as f:
@@ -1486,4 +1506,4 @@ if __name__ == "__main__":
     #print(con.query_product_dashboard())
     #con.logger.info("Test Report Message 2", type="report", key="Traceability")
     #print(con.query_product_movement_report())
-    print(con.query_stock_level_report())
+    print(con.query_employee_report(1))

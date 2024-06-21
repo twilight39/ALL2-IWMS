@@ -31,7 +31,12 @@ class Configuration:
         with open(self.config_file_path, "r") as f:
             return json.load(f)["program_files"]["Log"]
 
+    def getReportsFile(self) -> str:
+        with open(self.config_file_path, "r") as f:
+            return json.load(f)["program_files"]["Reports"]
+
     def getPreferences(self, employee_id: str) -> tuple[str, str]:
+        """Returns: (profile_picture, theme_name)"""
         try:
             with open(self.config_file_path, "r") as f:
                 data = json.load(f)
@@ -129,7 +134,8 @@ class Configuration:
                 "Graphics": f"{self.repo_file_path}/Graphics",
                 "Database": f"{self.repo_file_path}/Database/Database.db",
                 "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json",
-                "Log": f"{self.repo_file_path}/Database/Database.log"
+                "Log": f"{self.repo_file_path}/Database/Database.log",
+                "Reports": f"{self.repo_file_path}/Reports"
             }
 
         except FileNotFoundError:
@@ -138,7 +144,8 @@ class Configuration:
                     "Graphics": f"{self.repo_file_path}/Graphics",
                     "Database": f"{self.repo_file_path}/Database/Database.db",
                     "Preview": f"{self.repo_file_path}/Frames/ui_preview_text.json",
-                    "Log": f"{self.repo_file_path}/Database/Database.log"
+                    "Log": f"{self.repo_file_path}/Database/Database.log",
+                    "Reports": f"{self.repo_file_path}/Reports"
                 },
                 "user_preferences": {
                     "user_id": {
@@ -156,5 +163,5 @@ if __name__ == "__main__":
     #print(obj1.getPreferences('1'))
     # obj1.deletePreferences('1')
     # obj1.writeNotificationExclusions('-1', '5')
-    print(obj1.getNotificationExclusions('1'))
+    print(obj1.getReportsFile())
 

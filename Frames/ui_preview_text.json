@@ -28,5 +28,6 @@
   "taskEntry": "0 - Task Description",
   "taskBatchEntry": "TASK-000000-[A-Z]",
   "batchDescriptionEntry": "Batch Description",
-  "employeeRoleEntry": "Employee Role"
+  "employeeRoleEntry": "Employee Role",
+  "employeeIDNameEntry": "0 - Employee Name"
 }
