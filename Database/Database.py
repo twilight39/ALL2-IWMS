@@ -73,6 +73,9 @@ class DatabaseConnection:
         if record["extra"]["type"] == "report":
             return True
 
+        else:
+            return False
+
     def log_employee(self, employee_id):
         """
         1. Create a logger, and log the employee ID when login occurs
@@ -126,7 +129,7 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
-    def query_employee_report(self,employee_id: int | str):
+    def query_employee_report(self, employee_id: int | str):
         """Returns: [Employee ID - Employee Name, Role Name, Email, Contact Number,
         Total Tasks Assigned, Total Tasks Completed, Total Tasks Overdue]"""
 
@@ -172,7 +175,19 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
-
+    def query_user_activities_report(self) -> list[list[str]]:
+        """Returns: [Date, Time, User, Activity, Remark]"""
+        pattern = r"(?P<date>\d{4}-\d{2}-\d{2}) (?P<time>\d{2}:\d{2}:\d{2}) \| " \
+                  r"User Activities Report \| Employee ID: (?P<employee_id>[0-9]+) \| " \
+                  r"(?P<msg>[\w\s\|-]+) \| INFO"
+        results = []
+        self.cursor.execute("""SELECT w.WorkerID || ' - ' || w.Name FROM Workers w""")
+        worker_names = [value[0] for value in self.cursor.fetchall()]
+        for e in logger.parse(f"{self.config.getLogFile()}", pattern=pattern):
+            name = [value.split(' - ')[1] for value in worker_names if value.split(' - ')[0] == e["employee_id"]][0]
+            time = datetime.strptime(e["time"], "%H:%M:%S").strftime("%I:%M:%S %p")
+            results.append([e["date"], time, name, *e["msg"].split(' | ')])
+        return results
 
     def create_notification(self, notification_key: str, placeholder: str = None):
         """Creates a new notification. Placeholder is inserted if necessary."""
@@ -305,6 +320,7 @@ class DatabaseConnection:
         try:
             self.cursor.execute("INSERT INTO Product_Batch (PBatchNumber) VALUES (?)", (batchnumber,))
             self.connection.commit()
+            self.logger.info(f"Create Product Batch No. | {batchnumber}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -421,6 +437,10 @@ class DatabaseConnection:
             self.connection.commit()
             self.logger.success("", event="New Product Added", placeholder=product_name, type="notification")
             self.logger.warning("", event="Out of Stock Alert", placeholder=product_name, type="notification")
+            self.cursor.execute("""SELECT Name FROM Suppliers WHERE SupplierID = ?""", (preferred_supplier_id,))
+            self.logger.info(
+                f"Create New Product | {product_no} - {product_name} (RM{price}) [{self.cursor.fetchone()[0]}]",
+                type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -430,10 +450,27 @@ class DatabaseConnection:
     def update_product(self, product_no: str, product_name: str, description: str, price: float,
                        preferred_supplier_id: int) -> bool:
         try:
+            self.cursor.execute("""SELECT ProductName, Description, Price, PreferredSupplierID FROM Products 
+            WHERE ProductNo = ?""", (product_no,))
+            old_values = [value for value in self.cursor.fetchone()]
+            self.cursor.execute("""SELECT Name FROM Suppliers WHERE SupplierID = ?""", (old_values[3],))
+            old_values[3] = self.cursor.fetchone()[0]
             self.cursor.execute("""
             UPDATE Products SET ProductName = ?, Description = ?, Price = ?, PreferredSupplierID = ? WHERE ProductNo = ?
             """, (product_name, description, price, preferred_supplier_id, product_no,))
             self.connection.commit()
+
+            self.cursor.execute("""SELECT Name FROM Suppliers WHERE SupplierID = ?""", (preferred_supplier_id,))
+            new_supplier_name = self.cursor.fetchone()[0]
+            variables = [("Product Name", product_name), ("Product Description", description), ("Price", price),
+                         ("Preferred Supplier", new_supplier_name)]
+
+            for i, (var_name, var_value) in enumerate(variables):
+                if old_values[i] != var_value:
+                    self.logger.info(
+                        f"Update Product | {product_no} - {product_name} {var_name}: {old_values[i]} -> {var_value}",
+                        type="report", key="User Activities")
+
             return True
 
         except sqlite3.Error as err:
@@ -444,6 +481,9 @@ class DatabaseConnection:
         try:
             self.cursor.execute("DELETE FROM Products WHERE ProductNo = ?", (product_no,))
             self.connection.commit()
+            self.cursor.execute("SELECT ProductName FROM Products WHERE ProductNo = ?", (product_no,))
+            self.logger.info(
+                f"Delete Product | {product_no} - {self.cursor.fetchone()[0]}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -576,7 +616,9 @@ class DatabaseConnection:
             name = self.cursor.fetchone()[0]
             self.cursor.execute("SELECT PBatchNumber FROM Product_Batch WHERE PBatchID = ?", (batchID,))
             batchNumber = self.cursor.fetchone()[0]
-            self.logger.info(f"{name} | {batchNumber} | Vendor | Input | {quantity}", type="report", key="Product Movement")
+            self.logger.info(f"{name} | {batchNumber} | Vendor | Input | {quantity}", type="report",
+                             key="Product Movement")
+            self.logger.info(f"Receive Inventory | Shipment No: {shipmentNo}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -628,10 +670,13 @@ class DatabaseConnection:
             self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductNo = ?""", (productNo,))
             name = self.cursor.fetchone()[0]
             self.cursor.execute("""SELECT LocationName FROM Locations WHERE LocationID = ? OR LocationID = ?""",
-                                (srcLocationID, desLocationID, ))
+                                (srcLocationID, desLocationID,))
             locations = self.cursor.fetchall()
             self.logger.info(f"{name} | {batchNumber} | {locations[0][0]} | {locations[1][0]} | {quantity}",
                              type="report", key="Product Movement")
+            self.logger.info(
+                f"Update Inventory | Moved {quantity} units of {name} from {locations[0][0]} to {locations[1][0]}",
+                type="report", key="User Activities")
             return True
 
         except Exception as err:
@@ -640,9 +685,17 @@ class DatabaseConnection:
 
     def delete_inventory(self, inventoryID: int) -> bool:
         try:
+            self.cursor.execute("""SELECT p.ProductName, l.LocationName, COALESCE(i.StockQuantity, 0), b.PBatchNumber
+            FROM Inventory i INNER JOIN Products p ON i.ProductID = p.ProductID
+            INNER JOIN Locations l ON i.LocationID = l.LocationID
+            INNER JOIN Product_Batch b ON i.PBatchID = b.PBatchID
+            WHERE i.InventoryID = ?""", (inventoryID,))
+            old_values = self.cursor.fetchall()
             self.cursor.execute("DELETE FROM Inventory WHERE InventoryID = ?",
                                 (inventoryID,))
             self.connection.commit()
+            self.logger.info(f"""Deleted Inventory | Deleted {old_values[2]} {old_values[0]} at {old_values[1]} from 
+            database ({old_values[3]})""", type="report", key="User Activities")
 
         except sqlite3.Error as err:
             print(f"Error: {err}")
@@ -677,6 +730,7 @@ class DatabaseConnection:
                                 (name, contact_number, email))
             self.connection.commit()
             self.logger.success("", event="New Vendor Created", type="notification")
+            self.logger.info(f"Create Vendor | {name}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -685,9 +739,18 @@ class DatabaseConnection:
 
     def update_vendor(self, supplier_id: int, name: str, contact_number: str, email: str) -> bool:
         try:
+            self.cursor.execute("""SELECT Name, ContactNumber, Email FROM Suppliers WHERE SupplierID = ?""",
+                                (supplier_id,))
+            old_values = self.cursor.fetchone()
+
             self.cursor.execute("UPDATE Suppliers SET Name = ?, ContactNumber = ?, Email = ? WHERE SupplierID = ?",
                                 (name, contact_number, email, supplier_id))
             self.connection.commit()
+
+            for i, e in enumerate((("Name", name), ("Contact Number", contact_number), ("Email", email))):
+                if str(old_values[i]) != e[1]:
+                    self.logger.info(f"Update Vendor | {e[0]}: {old_values[i]} -> {e[1]}",
+                                     type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -696,9 +759,12 @@ class DatabaseConnection:
 
     def delete_vendor(self, supplier_id: int) -> bool:
         try:
-            #print(supplier_id)
+            self.cursor.execute("SELECT Name FROM Suppliers WHERE SupplierID = ?", (supplier_id,))
+            name = self.cursor.fetchone()[0]
             self.cursor.execute("DELETE FROM Suppliers WHERE SupplierID = ?", (supplier_id,))
             self.connection.commit()
+
+            self.logger.info(f"Create Vendor | {name}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -735,6 +801,7 @@ class DatabaseConnection:
                 INSERT INTO Tasks (TaskDesc, ETA, TaskStatus, TBatchID)
                 VALUES (?, ?, 'Not Started', ?)""", (description, eta, batch_id))
             self.connection.commit()
+            self.logger.info(f"Create Task | {description}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -756,12 +823,28 @@ class DatabaseConnection:
                     SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?, TBatchID = ?
                     WHERE TaskID = ?
                 """, (description, worker_id, progress, eta, batch_id, task_id,))
+                self.logger.info(f"Update Task | Batch Assignment {batch_id}", type="report", key="User Activities")
             else:
+                self.cursor.execute("""SELECT TaskDesc, WorkerID, TaskStatus, ETA FROM Tasks WHERE TaskID = ?""",
+                                    (task_id,))
+                old_values = self.cursor.fetchone()
+                self.cursor.execute("SELECT Name FROM Workers WHERE WorkerID = ?", (old_values[1],))
+                old_values[1] = self.cursor.fetchone()[0]
+                self.cursor.execute("SELECT Name FROM Workers WHERE WorkerID = ?", (worker_id,))
+                new_worker_name = self.cursor.fetchone()[0]
+
                 self.cursor.execute("""
                                     UPDATE Tasks
                                     SET TaskDesc = ?, WorkerID = ?, TaskStatus = ?, ETA = ?, TBatchID = NULL
                                     WHERE TaskID = ?
                                 """, (description, worker_id, progress, eta, task_id,))
+
+                for i, e in enumerate(
+                        (("Task Description", description), ("Worker", new_worker_name), ("Task Status", progress),
+                         ("ETA", eta))):
+                    if old_values[i] != e[1]:
+                        self.logger.info(f"Update Task | {e[0]}: {old_values[i]} -> {e[1]}", type="report",
+                                         key="User Activities")
             self.connection.commit()
             return True
 
@@ -771,8 +854,11 @@ class DatabaseConnection:
 
     def delete_task(self, task_id: int) -> bool:
         try:
+            self.cursor.execute("SELECT TaskDesc FROM Tasks WHERE TaskID = ?", (task_id,))
+            desc = self.cursor.fetchone()[0]
             self.cursor.execute("DELETE FROM Tasks WHERE TaskID = ?", (task_id,))
             self.connection.commit()
+            self.logger.info(f"Delete Task | {desc}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -914,7 +1000,9 @@ class DatabaseConnection:
                             VALUES (?, ?, ?, ?, ?, ?)""",
                                     (shipmentID, productID, quantity, vendorID, date.today(), batchID,))
                 self.connection.commit()
+
                 self.logger.success("", event="New Purchase Order Created", type="notification")
+                self.logger.info(f"Add Purchase Order | {shipmentID}", type="report", key="User Activities")
                 return True
             else:
                 return False
@@ -925,11 +1013,28 @@ class DatabaseConnection:
 
     def update_purchaseOrder(self, shipmentNo: str, productID: int, quantity: int, vendorID: int, Status: str) -> bool:
         try:
+            self.cursor.execute("""SELECT p.ProductName, s.Quantity, v.Name, s.Status
+            FROM Shipments s LEFT JOIN Products p ON s.ProductID = p.ProductID
+            LEFT JOIN Suppliers v ON s.SupplierID = v.SupplierID
+            WHERE s.ShipmentNo = ?""", (shipmentNo,))
+            old_values = self.cursor.fetchone()
+
             self.cursor.execute("""
             UPDATE Shipments SET ProductID = ?, Quantity = ?, SupplierID = ?, Status = ?
             WHERE ShipmentNo = ?
             """, (productID, quantity, vendorID, Status, shipmentNo))
             self.connection.commit()
+
+            self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductID = ?""", (productID,))
+            name = self.cursor.fetchone()[0]
+            self.cursor.execute("""SELECT Name FROM Suppliers WHERE SupplierID = ?""", (vendorID,))
+            vendor_name = self.cursor.fetchone()[0]
+
+            for i, e in enumerate(
+                    (("Product Name", name), ("Quantity", quantity), ("Vendor", vendor_name), ("Status", Status))):
+                if str(old_values[i]) != e[1]:
+                    self.logger.info(f"Update Purchase Order | {shipmentNo} {e[0]}: {old_values[i]} -> {e[1]}",
+                                     type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -939,6 +1044,7 @@ class DatabaseConnection:
     def delete_purchaseOrder(self, purchaseOrderNo: str) -> bool:
         try:
             self.cursor.execute("DELETE FROM Shipments WHERE ShipmentNo = ?", (purchaseOrderNo,))
+            self.logger.info(f"Delete Purchase Order | {purchaseOrderNo}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -1128,6 +1234,7 @@ class DatabaseConnection:
             self.cursor.execute("INSERT INTO Sales (SaleNo, Date) VALUES (?, ?)", (saleNo, date.today(),))
             self.connection.commit()
             self.logger.success("", event="New Sales Order Created", type="notification")
+            self.logger.info(f"Create Sales Order | {saleNo}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -1153,6 +1260,11 @@ class DatabaseConnection:
                     """UPDATE Sales_Inventory SET QuantitySold = QuantitySold + ? WHERE SaleID = ? AND ProductID = ?""",
                     (quantity, saleID, productID,))
             self.connection.commit()
+
+            self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductID = ?""", (productID,))
+            name = self.cursor.fetchone()[0]
+            self.logger.info(f"Add Sales Order | Add {quantity} {name} to {saleNo}", type="report",
+                             key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -1167,9 +1279,13 @@ class DatabaseConnection:
             WHERE s.SaleNo = ? AND p.ProductNo = ?
             """, (saleNo, productNo))
             salesInventoryID = self.cursor.fetchone()[0]
-            #print(batchNo)
+
             self.cursor.execute("""SELECT PBatchID FROM Product_Batch WHERE PBatchNumber = ?""", (batchNo,))
             batchID = self.cursor.fetchone()[0]
+
+            self.cursor.execute("""SELECT ProductName FROM Products WHERE ProductNo = ?""", (productNo,))
+            name = self.cursor.fetchone()[0]
+
             self.cursor.execute("""SELECT SalesInventoryBatchID FROM Sales_Inventory_Batch
             WHERE SalesInventoryID = ? AND PBatchID = ?""", (salesInventoryID, batchID))
             try:
@@ -1180,6 +1296,8 @@ class DatabaseConnection:
                 self.cursor.execute("""INSERT INTO Sales_Inventory_Batch (SalesInventoryID, PBatchID, QuantityTaken)
                 VALUES (?, ?, ?)""", (salesInventoryID, batchID, quantity,))
             self.connection.commit()
+            self.logger.info(f"Update Sales Order | Assigned {quantity} {name} from {batchNo} to {saleNo}",
+                             type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -1203,6 +1321,8 @@ class DatabaseConnection:
                                 (newStatus, saleDetails.split(' (')[0],))
             #print(f"{newStatus = }\n{saleDetails.split('(')[0] = }")
             self.connection.commit()
+            self.logger.info(f"Validate Sales Order | Validated Payment for {saleDetails.split(' (')[0]}",
+                             type="report", key="User Activities")
             return True
 
         except Exception as err:
@@ -1212,7 +1332,6 @@ class DatabaseConnection:
     def update_salesOrder_delivery(self, saleNo: str) -> bool:
         if not self.validate_salesOrder_delivery(saleNo):
             return False
-        #print("validation success")
         try:
             self.cursor.execute("""SELECT i.ProductID, b.QuantityTaken, b.PBatchID
             FROM Sales_Inventory_Batch b INNER JOIN Sales_Inventory i ON b.SalesInventoryID = i.SalesInventoryID
@@ -1262,6 +1381,9 @@ class DatabaseConnection:
                 batchNumber = self.cursor.fetchone()[0]
                 self.logger.info(f"{product[1]} | {batchNumber} | Output | Customer | {result[1]}",
                                  type="report", key="Product Movement")
+
+            self.logger.info(f"Validate Sales Order | Validated Delivery for {saleNo}",
+                             type="report", key="User Activities")
             return True
 
 
@@ -1549,4 +1671,5 @@ if __name__ == "__main__":
     #print(con.query_product_dashboard())
     #con.logger.info("Test Report Message 2", type="report", key="Traceability")
     #print(con.query_product_movement_report())
-    print(con.query_traceability_report("BATCH-240526-A", "Executive Office Chair"))
+    # print(con.query_traceability_report("BATCH-240526-A", "Executive Office Chair"))
+    print(con.query_user_activities_report())
