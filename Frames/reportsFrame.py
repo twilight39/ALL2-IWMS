@@ -73,6 +73,11 @@ class ReportFrame(pageFrame):
         self._insert_table_headings(column_names)
         self._load_table_rows(self.db_connection.query_traceability_report(batch_number[0], batch_number[1]))
 
+    def user_activities_report(self):
+        column_names = ("Date", "Time", "User", "Activity", "Remark")
+        self._insert_table_headings(column_names)
+        self._load_table_rows(self.db_connection.query_user_activities_report())
+
     def _insert_table_headings(self, column_names: tuple) -> None:
         self.tableview.purge_table_data()
         # print(column_names)
@@ -92,6 +97,9 @@ class ReportFrame(pageFrame):
 
         elif button_text == "Traceability Report":
             self.traceability_report()
+
+        elif button_text == "User Activities":
+            self.user_activities_report()
 
     def _dialog_employee(self) -> str | None:
         def on_submit_button():
@@ -356,7 +364,7 @@ if __name__ == '__main__':
     # Creates Frames
     lFrame = navigationFrame(window, 1, ttk.Frame(window))
     lFrame.getButtonCommand("Report")
-    lFrame.rFrame.traceability_report()
+    lFrame.rFrame.user_activities_report()
     # window.withdraw()
 
     # Starts Event Main Loop
