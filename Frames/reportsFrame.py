@@ -38,13 +38,11 @@ class ReportFrame(pageFrame):
         self.product_movement_report()
 
     def product_movement_report(self):
-        self.tableview.grid()
         column_names = ("Date", "Product", "Batch No.", "From", "To", "Quantity", "Status")
         self._insert_table_headings(column_names)
         self._load_table_rows(self.db_connection.query_product_movement_report())
 
     def stock_level_report(self):
-        self.tableview.grid()
         column_names = ("Product", "Unit Cost", "Total Value", "On Hand", "Free to Use", "Incoming", "Outgoing")
         self._insert_table_headings(column_names)
         self._load_table_rows(self.db_connection.query_stock_level_report())
@@ -63,6 +61,18 @@ class ReportFrame(pageFrame):
 
         self._generate_report(parameters + [image])
 
+    def traceability_report(self):
+        batch_number = self._dialog_product_batch_no()
+
+        if batch_number is None:
+            return
+
+        batch_number = (batch_number.split(' - ')[0], batch_number.split(' - ')[1])
+
+        column_names = ("PIC", "Product Name", "Date", "Batch No.", "From", "To", "Quantity")
+        self._insert_table_headings(column_names)
+        self._load_table_rows(self.db_connection.query_traceability_report(batch_number[0], batch_number[1]))
+
     def _insert_table_headings(self, column_names: tuple) -> None:
         self.tableview.purge_table_data()
         # print(column_names)
@@ -79,6 +89,9 @@ class ReportFrame(pageFrame):
 
         elif button_text == "Performance Report":
             self.performance_report()
+
+        elif button_text == "Traceability Report":
+            self.traceability_report()
 
     def _dialog_employee(self) -> str | None:
         def on_submit_button():
@@ -140,6 +153,67 @@ class ReportFrame(pageFrame):
         add_validation(entry, validator(validate_entry), when="focus")
         toplevel.wait_window()
         return toplevel.selected_employee
+
+    def _dialog_product_batch_no(self) -> str | None:
+        def on_submit_button():
+            text = entry.get()
+            if text in entry.cget("values"):
+                toplevel.destroy()
+                toplevel.selected_batch_no = text
+            else:
+                ttk.Label(frame, text="Submission failed to process", bootstyle="danger", anchor=ttk.CENTER,
+                          font=self.font.get_font("error")).grid(row=2, column=1, columnspan=2, sticky="we")
+
+        toplevel = ttk.Toplevel(master=self.master, width=400, height=150, resizable=(False, False),
+                                title="Traceability Report", transient=self.master, minsize=(400, 150))
+        errVar = ttk.StringVar()
+        toplevel.selected_batch_no = None
+
+        ttk.Frame(toplevel, height=20).grid(row=0, column=0)
+        ttk.Label(toplevel, text="Enter Batch No.", font=self.font.get_font("thin2"), anchor=ttk.W).grid(
+            row=1, column=0, sticky="nwes", padx=20)
+        entry = ttk.Combobox(toplevel, values=self.db_connection.query_productBatchNo())
+        entry.grid(row=2, column=0, sticky="nwes", padx=20)
+        ttk.Label(toplevel, textvariable=errVar, anchor=ttk.NW, font=self.font.get_font("error"),
+                  foreground=self.styleObj.colors.get("danger")).grid(row=3, column=0, sticky="nwes", padx=20)
+        ttk.Separator(toplevel).grid(row=4, column=0, columnspan=3, sticky="wes")
+        frame = ttk.Frame(toplevel, padding=10)
+        frame.grid(row=5, column=0, sticky="nwes")
+
+        toplevel.rowconfigure(0, weight=0)
+        toplevel.rowconfigure(1, weight=0)
+        toplevel.rowconfigure(2, weight=1)
+        toplevel.rowconfigure(3, weight=1)
+        toplevel.rowconfigure(4, weight=1)
+        toplevel.rowconfigure(5, weight=0)
+        toplevel.columnconfigure(0, weight=1)
+
+        errVar2 = ttk.StringVar()
+        ttk.Button(frame, text="Cancel", bootstyle="danger", command=lambda: toplevel.destroy()).grid(row=1, column=1)
+        ttk.Button(frame, text="Submit", bootstyle="success", command=lambda: on_submit_button()
+                   ).grid(row=1, column=2)
+
+        frame.rowconfigure(1, weight=1)
+        frame.columnconfigure(0, weight=8)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+
+        # Preview Text
+        previewText(entry, key="batchNoEntry")
+
+        # Validation
+        def validate_entry(event):
+            if event.postchangetext in event.widget.cget("values") or event.postchangetext == "":
+                errVar.set("")
+                return True
+            else:
+                errVar.set("Invalid Batch No.")
+                return False
+
+        add_validation(entry, validator(validate_entry), when="focus")
+        toplevel.wait_window()
+        return toplevel.selected_batch_no
+
 
     def _generate_report(self, parameters: list[str]):
         """Parameters: [Employee ID - Employee Name, Employee Role, Email, Contact Number, Tasks Assigned,
@@ -282,7 +356,7 @@ if __name__ == '__main__':
     # Creates Frames
     lFrame = navigationFrame(window, 1, ttk.Frame(window))
     lFrame.getButtonCommand("Report")
-    lFrame.rFrame.performance_report()
+    lFrame.rFrame.traceability_report()
     # window.withdraw()
 
     # Starts Event Main Loop

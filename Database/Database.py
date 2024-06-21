@@ -146,6 +146,34 @@ class DatabaseConnection:
             print(f"Error: {err}")
             return []
 
+    def query_traceability_report(self, batch_no: str, product_name: str = None) -> list[str]:
+        """Returns: ["Employee ID - Employee Name", "Product No - Product Name", "Date", "Batch No.", "From", "To",
+        Quantity]"""
+        pattern = r"(?P<time>\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2} \| " \
+                  r"Product Movement Report \| Employee ID: (?P<employee_id>[0-9]+) \| " \
+                  r"(?P<msg>[\w\s\|-]+) \| INFO"
+        results = []
+        for e in logger.parse(f"{self.config.getLogFile()}", pattern=pattern):
+            data = [e["employee_id"]] + e["msg"].split(' | ')
+            if data[2] == batch_no and data[1] == product_name:
+                data.insert(2, e["time"])
+                results.append(data)
+        try:
+            self.cursor.execute("""SELECT w.WorkerID || ' - ' || w.Name FROM Workers w""")
+            workers = [value[0] for value in self.cursor.fetchall()]
+            self.cursor.execute("""SELECT p.ProductNo || ' - ' || p.ProductName FROM Products p""")
+            products = [value[0] for value in self.cursor.fetchall()]
+            for i, result in enumerate(results):
+                result[0] = [value for value in workers if value.split(' - ')[0] == result[0]][0]
+                result[1] = [value for value in products if value.split(' - ')[1] == result[1]][0]
+            return results
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
+
+
+
     def create_notification(self, notification_key: str, placeholder: str = None):
         """Creates a new notification. Placeholder is inserted if necessary."""
         with open(f"{self.config.repo_file_path}/Database/Notifications.json", "r") as f:
@@ -478,6 +506,21 @@ class DatabaseConnection:
             WHERE p.ProductNo = ? AND i.LocationID = ?
             """, (productNo, locationID,))
             return [f"{value[0]} ({value[1]} Stock Remaining)" for value in self.cursor.fetchall()]
+
+        except sqlite3.Error as err:
+            print(f"Error: {err}")
+            return []
+
+    def query_productBatchNo(self) -> list[str]:
+        """Returns a list of all Product Batch Numbers in Inventory [PBatchNo - ProductName]"""
+        try:
+            self.cursor.execute("""
+                SELECT DISTINCT b.PBatchNumber ||' - ' || p.ProductName
+                FROM Inventory i 
+                INNER JOIN Product_Batch b ON i.PBatchID = b.PBatchID
+                INNER JOIN Products p ON i.ProductID = p.ProductID
+            """)
+            return [row[0] for row in self.cursor.fetchall()]
 
         except sqlite3.Error as err:
             print(f"Error: {err}")
@@ -1506,4 +1549,4 @@ if __name__ == "__main__":
     #print(con.query_product_dashboard())
     #con.logger.info("Test Report Message 2", type="report", key="Traceability")
     #print(con.query_product_movement_report())
-    print(con.query_employee_report(1))
+    print(con.query_traceability_report("BATCH-240526-A", "Executive Office Chair"))
