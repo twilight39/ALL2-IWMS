@@ -1,6 +1,6 @@
 import os
 from Database import DatabaseConnection
-from Authentication import authentication
+from Database import authentication
 from datetime import date
 
 def populateTestTable(db_connection:DatabaseConnection):
@@ -133,8 +133,8 @@ def authTest():
 
 if __name__ == "__main__":
     try:
-        os.remove("Database.db")
-        os.remove("Database.log")
+        os.remove("Database/Database.db")
+        os.remove("Database/Database.log")
     except:
         pass
     con = DatabaseConnection()

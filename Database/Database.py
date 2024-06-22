@@ -231,7 +231,11 @@ class DatabaseConnection:
     def query_worker(self) -> list[str]:
         """Returns: Worker Names"""
         self.cursor.execute("""SELECT WorkerID || ' - ' || Name FROM Workers WHERE RoleID = 3""")
-        return [value for value in self.cursor.fetchall()[0]]
+        try:
+            results = [value for value in self.cursor.fetchall()[0]]
+        except IndexError:
+            results = []
+        return results
 
     def query_notification(self, role: str) -> list:
         try:
@@ -244,7 +248,10 @@ class DatabaseConnection:
                                         WHERE RoleID = ?""", (index,))
                 notifications += self.cursor.fetchall()
 
-            notifications = sorted(notifications, key=lambda timestamp: notifications[1])
+            try:
+                notifications = sorted(notifications, key=lambda timestamp: notifications[1])
+            except IndexError:
+                notifications = []
             return notifications
 
         except sqlite3.Error as err:
@@ -281,7 +288,10 @@ class DatabaseConnection:
             latest = [value[0] for value in values if value[0].split('-')[1] == date.today().strftime("%y%m%d")]
             #print(latest)
             self.cursor.execute("SELECT PBatchNumber FROM Product_Batch ORDER BY PBatchID DESC LIMIT 1")
-            latest += [self._generateID(self.cursor.fetchone()[0])]
+            try:
+                latest += [self._generateID(self.cursor.fetchone()[0])]
+            except TypeError:
+                latest += [f"BATCH-{date.today().strftime('%y%m%d')}-A"]
             return latest
 
         except sqlite3.Error as err:
@@ -499,7 +509,8 @@ class DatabaseConnection:
             LEFT JOIN Locations l ON i.LocationID = l.LocationID
             LEFT JOIN Product_Batch b ON i.PBatchID = b.PBatchID  
             """)
-            return self.cursor.fetchall()
+            results = [value for value in self.cursor.fetchall() if value[4] != 0]
+            return results
 
         except sqlite3.Error as err:
             print(f"Error: {err}")

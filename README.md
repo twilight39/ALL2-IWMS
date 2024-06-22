@@ -77,7 +77,6 @@ KEAI also offers a minimal system for managing employees, assigning/batch assign
     │   ├── Database.py
     │   ├── Notification.py
     │   ├── Notifications.json
-    │   ├── UnitTest.py
     │   └── __init__.py
     ├── Fonts
     │   ├── Lexend-Bold.ttf
@@ -123,6 +122,7 @@ KEAI also offers a minimal system for managing employees, assigning/batch assign
     │   └── test_notification.py
     ├── configuration.py
     ├── main.py
+    ├── SampleInfo.py
     ├── tmp
     │   └── temp_image.tiff
     └── utils.py
@@ -221,4 +221,15 @@ KEAI also offers a minimal system for managing employees, assigning/batch assign
 > Run ALL2-IWMS using the command below:
 > ```console
 > $ python main.py
+> ```
+> The application will launch, and you will be directed to the login screen. Enter the default administrator 
+> credentials to access the 
+> dashboard.
+> ```console
+> Email: ahmad@gmail.com
+> Password: admin1234
+> ```
+> You can also test the application with some dummy data. To do this, run the following command:
+> ```console
+> $ python SampleInfo.py
 > ```

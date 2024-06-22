@@ -59,7 +59,10 @@ class vendorFrame(pageFrame):
         toplevel.create_buttonbox(frame=toplevel.frameList[5])
         toplevel.submitButton.configure(command= lambda: onButtonPress())
 
-        vendorID = self.db_connection.query_vendor()[-1][0] + 1
+        try:
+            vendorID = self.db_connection.query_vendor()[-1][0] + 1
+        except IndexError:
+            vendorID = 1
         #print(vendorID)
         toplevel.entries[0].configure(state="readonly")
         toplevel.stringVar[0].set(str(vendorID))
@@ -71,10 +74,10 @@ class vendorFrame(pageFrame):
 
         # Validation
         valObj = validation()
-        for index in [0, 3]:
-            valObj.validate(widget=toplevel.entries[index], key="integer", errStringVar=toplevel.errVar[index])
+        valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
         valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
         valObj.validate(widget=toplevel.entries[2], key="email", errStringVar=toplevel.errVar[2])
+        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[0])
 
         # Bindings
         toplevel.bind_entry_return()
@@ -125,10 +128,10 @@ class vendorFrame(pageFrame):
 
         # Validation
         valObj = validation()
-        for index in [0, 3]:
-            valObj.validate(widget=toplevel.entries[index], key="integer", errStringVar=toplevel.errVar[index])
+        valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
         valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
         valObj.validate(widget=toplevel.entries[2], key="email", errStringVar=toplevel.errVar[2])
+        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[0])
 
         # Bindings
         toplevel.bind_entry_return()
