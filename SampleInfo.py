@@ -24,7 +24,7 @@ def populateTestTable(db_connection:DatabaseConnection):
         ["Gear & Bags", "orders@gearandbags.com", "5551234567"]
     ]:
         db_connection.add_vendor(name, contactNumber, email)
-    print(db_connection.query_vendor())
+    # print(db_connection.query_vendor())
 
     for description, eta, workerID, batchID in [
         ["Write documentation for new feature", "2024-05-30", 1, None],
@@ -32,13 +32,13 @@ def populateTestTable(db_connection:DatabaseConnection):
         ["Review code for pull request", "2024-05-27", 3, None]
     ]:
         db_connection.add_task(description, eta, workerID, batchID)
-    print(db_connection.query_task_table())
+    # print(db_connection.query_task_table())
 
     db_connection.add_taskBatch("Batch 1", "TASK-240611-A", [1,2])
     db_connection.add_taskBatch("Batch 2", "TASK-240611-B", [3])
     db_connection.delete_taskBatch(2)
     db_connection.update_taskBatch(1, "Super Space Soup Rare", [1,3], 2)
-    print(db_connection.query_taskBatch())
+    # print(db_connection.query_taskBatch())
 
     for no, name, description, price, supplierID in [
         ["FUR-CHR-M-BR-001","Executive Office Chair", "Ergonomic chair with adjustable features", 349.99, 3],
@@ -54,7 +54,7 @@ def populateTestTable(db_connection:DatabaseConnection):
     db_connection.add_purchaseOrder(2, 2, 3, "BATCH-240524-A")
     db_connection.add_purchaseOrder(5, 34, 2, "BATCH-240527-A")
     db_connection.delete_purchaseOrder("SHIP-240602-C")
-    print(db_connection.query_purchaseOrder())
+    # print(db_connection.query_purchaseOrder())
 
     for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B", "C"]]:
         db_connection.receive_inventory(number)
@@ -86,7 +86,7 @@ def populateTestTable(db_connection:DatabaseConnection):
 
     db_connection.update_salesOrder_delivery(f"SALE-{date.today().strftime('%y%m%d')}-C")
 
-    print(db_connection.query_salesOrder_table())
+    # print(db_connection.query_salesOrder_table())
 
     # db_connection.add_notification("Administrator", "Admin only noti")
     # db_connection.add_notification("Supervisor", "Supervisor noti")
@@ -94,8 +94,8 @@ def populateTestTable(db_connection:DatabaseConnection):
     # db_connection.add_notification("Worker", """Worker noti 2 with extremely long text for testing purposes
     # aaAaaAaaAaaAaaAaaAaaAaaAaaAaaAaaAaa""")
 
-    print(f"Worker Visible Notifications: {db_connection.query_notification('Worker')}")
-    print(f"Admin Visible Notifications: {db_connection.query_notification('Administrator')}")
+    # print(f"Worker Visible Notifications: {db_connection.query_notification('Worker')}")
+    # print(f"Admin Visible Notifications: {db_connection.query_notification('Administrator')}")
 
 def authTest():
     auth = authentication()
@@ -113,23 +113,26 @@ def authTest():
             employeeContactNumber=contactNumber,
             employeePassword=password
         )
-    print("Accounts created successfully.")
+    # print("Accounts created successfully.")
 
     # Authenticates Accounts
     if auth.authenticate("ahmad@gmail.com", "admin1234"):
-        print("Admin authenticate success.")
+        pass
+        # print("Admin authenticate success.")
 
     if auth.authenticate("john@example.com", "JohnIsDumb"):
-        print("Supervisor authenticate success.")
+        pass
+        # print("Supervisor authenticate success.")
 
     # Resets a Password
     auth.resetPassword(4, "KingCharlesTheThird")
     if auth.authenticate("charlie.williams@company.com", "KingCharlesTheThird"):
-        print("Password changed successfully.")
+        pass
+        # print("Password changed successfully.")
 
     # Deletes an Account
     auth.deleteAccount(1, "admin1234", 2)
-    print("Account deleted succesfully.")
+    # print("Account deleted succesfully.")
 
 if __name__ == "__main__":
     try:
