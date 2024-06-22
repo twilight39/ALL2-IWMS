@@ -62,6 +62,7 @@ class Configuration:
                 data["user_preferences"]["user_id"][str(employee_id)]["theme_name"] = theme_name
 
         except KeyError:
+            data["user_preferences"]["user_id"][str(employee_id)] = {}
             data["user_preferences"]["user_id"][str(employee_id)]["profile_picture"] = "user_1a"
             data["user_preferences"]["user_id"][str(employee_id)]["theme_name"] = "litera"
 
