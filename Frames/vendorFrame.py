@@ -59,7 +59,10 @@ class vendorFrame(pageFrame):
         toplevel.create_buttonbox(frame=toplevel.frameList[5])
         toplevel.submitButton.configure(command= lambda: onButtonPress())
 
-        vendorID = self.db_connection.query_vendor()[-1][0] + 1
+        try:
+            vendorID = self.db_connection.query_vendor()[-1][0] + 1
+        except IndexError:
+            vendorID = 1
         #print(vendorID)
         toplevel.entries[0].configure(state="readonly")
         toplevel.stringVar[0].set(str(vendorID))

@@ -22,7 +22,7 @@ def main():
         window.columnconfigure(1, weight=20)
 
     instance = Login(window, onLogin_callback=onLogin)
-    onLogin(instance, "ahmad@gmail.com")
+    # onLogin(instance, "ahmad@gmail.com")
 
     # Starts Event Main Loop
     window.mainloop()
