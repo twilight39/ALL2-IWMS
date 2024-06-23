@@ -77,7 +77,7 @@ class vendorFrame(pageFrame):
         valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
         valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
         valObj.validate(widget=toplevel.entries[2], key="email", errStringVar=toplevel.errVar[2])
-        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[0])
+        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[3])
 
         # Bindings
         toplevel.bind_entry_return()
@@ -131,7 +131,7 @@ class vendorFrame(pageFrame):
         valObj.validate(widget=toplevel.entries[0], key="integer", errStringVar=toplevel.errVar[0])
         valObj.validate(widget=toplevel.entries[1], key="string", errStringVar=toplevel.errVar[1])
         valObj.validate(widget=toplevel.entries[2], key="email", errStringVar=toplevel.errVar[2])
-        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[0])
+        valObj.validate(widget=toplevel.entries[3], key="contactNumber", errStringVar=toplevel.errVar[3])
 
         # Bindings
         toplevel.bind_entry_return()
