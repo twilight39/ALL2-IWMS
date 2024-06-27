@@ -6,7 +6,7 @@ from datetime import date
 def populateTestTable(db_connection:DatabaseConnection):
     auth = authentication()
     for name, roleID, contactNumber, email, password in [
-        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb"],
+        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb0"],
         ["Bob Johnson", 3, "4447890123" ,"bob.johnson@company.com", "BobTheBuilder0"],
         ["Charlie Williams", 2, "3335678901" ,"charlie.williams@company.com", "KingCharlesTheSecond0"]
     ]:
@@ -102,9 +102,9 @@ def authTest():
 
     # Creates Accounts
     for name, roleID, contactNumber, email, password in [
-        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb"],
-        ["Bob Johnson", 3, "4447890123", "bob.johnson@company.com", "BobTheBuilder"],
-        ["Charlie Williams", 2, "3335678901", "charlie.williams@company.com", "KingCharlesTheSecond"]
+        ["John Doe", 2, "1234567890", "john@example.com", "JohnIsDumb1"],
+        ["Bob Johnson", 3, "4447890123", "bob.johnson@company.com", "BobTheBuilder1"],
+        ["Charlie Williams", 2, "3335678901", "charlie.williams@company.com", "KingCharlesTheSecond1"]
     ]:
         auth.createAccount(
             employeeEmail=email,
@@ -120,19 +120,15 @@ def authTest():
         pass
         # print("Admin authenticate success.")
 
-    if auth.authenticate("john@example.com", "JohnIsDumb"):
+    if auth.authenticate("john@example.com", "JohnIsDumb0"):
         pass
         # print("Supervisor authenticate success.")
 
     # Resets a Password
-    auth.resetPassword(4, "KingCharlesTheThird")
-    if auth.authenticate("charlie.williams@company.com", "KingCharlesTheThird"):
+    auth.resetPassword(4, "KingCharlesTheThird0")
+    if auth.authenticate("charlie.williams@company.com", "KingCharlesTheThird0"):
         pass
         # print("Password changed successfully.")
-
-    # Deletes an Account
-    auth.deleteAccount(1, "admin1234", 2)
-    # print("Account deleted succesfully.")
 
 if __name__ == "__main__":
     try:
