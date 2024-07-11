@@ -24,7 +24,7 @@ class navigationFrame(ttk.Frame):
 
         # Button Configuration for roles
         buttonConfig = {
-            "Worker": ["Dashboard", "Inventory", "Report"],
+            "Worker": ["Dashboard", "Inventory", "Report", "Tasks"],
             "Supervisor": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Tasks", "Vendor",
                            "Report"],
             "Administrator": ["Dashboard", "Product", "Inventory", "Purchase Order", "Sales Order", "Vendor",

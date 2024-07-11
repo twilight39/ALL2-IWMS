@@ -80,7 +80,7 @@ class DatabaseConnection:
         """
         1. Create a logger, and log the employee ID when login occurs
         2. Bind the employee ID to the DatabaseConnection Class
-        3. Patch functions to write notifications to database as logs are written
+        3. Modify functions to write notifications to database as logs are written
         4. Parse logs to aggregate log information for graphs for GUI
         """
         self.logger = logger.bind(id=str(employee_id), placeholder="")
@@ -838,7 +838,7 @@ class DatabaseConnection:
             else:
                 self.cursor.execute("""SELECT TaskDesc, WorkerID, TaskStatus, ETA FROM Tasks WHERE TaskID = ?""",
                                     (task_id,))
-                old_values = self.cursor.fetchone()
+                old_values = [value for value in self.cursor.fetchone()]
                 self.cursor.execute("SELECT Name FROM Workers WHERE WorkerID = ?", (old_values[1],))
                 old_values[1] = self.cursor.fetchone()[0]
                 self.cursor.execute("SELECT Name FROM Workers WHERE WorkerID = ?", (worker_id,))
