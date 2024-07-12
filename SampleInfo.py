@@ -50,16 +50,18 @@ def populateTestTable(db_connection:DatabaseConnection):
         db_connection.add_product(no, name, description, price, supplierID)
 
     db_connection.add_purchaseOrder(1, 30, 1, "BATCH-240526-A")
+    db_connection.add_purchaseOrder(1, 10, 1, "BATCH-240524-A")
     db_connection.add_purchaseOrder(3, 15, 2, "BATCH-240524-A")
     db_connection.add_purchaseOrder(2, 2, 3, "BATCH-240524-A")
     db_connection.add_purchaseOrder(5, 34, 2, "BATCH-240527-A")
     db_connection.delete_purchaseOrder("SHIP-240602-C")
     # print(db_connection.query_purchaseOrder())
 
-    for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B", "C"]]:
+    for number in [f"SHIP-{date.today().strftime('%y%m%d')}-{alphabet}" for alphabet in ["A", "B", "C", "D"]]:
         db_connection.receive_inventory(number)
 
     db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 3, 15)
+    db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240524-A", 1, 4, 2)
     db_connection.update_inventory("FUR-CHR-M-BR-001", "BATCH-240526-A", 1, 4, 7)
     db_connection.update_inventory("FUR-CHR-M-BL-001", "BATCH-240524-A", 1, 4, 8)
     db_connection.update_inventory("FUR-TBL-M-BR-001", "BATCH-240524-A", 1, 4, 2)
@@ -80,7 +82,7 @@ def populateTestTable(db_connection:DatabaseConnection):
     for productNo, batchNo, qty in [
         ["FUR-CHR-M-BR-001", "BATCH-240526-A", 4],
         ["FUR-CHR-M-BL-001", "BATCH-240524-A", 5],
-        ["FUR-TBL-M-BR-001", "BATCH-240524-A", 2]
+        ["FUR-TBL-M-BR-001", "BATCH-240524-A", 2],
     ]:
         db_connection.update_salesOrder(f"SALE-{date.today().strftime('%y%m%d')}-C", productNo, batchNo, qty)
 

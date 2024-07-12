@@ -408,8 +408,8 @@ class DatabaseConnection:
             results = []
             self.cursor.execute("SELECT COALESCE(COUNT(ProductID), 0) FROM Products")
             results.append(int(self.cursor.fetchone()[0]))
-            self.cursor.execute("""SELECT DISTINCT COALESCE(COUNT(ProductID), 0) FROM Inventory WHERE LocationID != '5' 
-            GROUP BY ProductID""")
+            self.cursor.execute("""SELECT COALESCE(COUNT(DISTINCT ProductID), 0) FROM Inventory WHERE LocationID!=5
+            """)
             try:
                 results.append(int(self.cursor.fetchone()[0]))
             except TypeError:
@@ -489,11 +489,12 @@ class DatabaseConnection:
 
     def delete_product(self, product_no: str) -> bool:
         try:
+            self.cursor.execute("SELECT ProductName FROM Products WHERE ProductNo = ?", (product_no,))
+            name = self.cursor.fetchone()[0]
             self.cursor.execute("DELETE FROM Products WHERE ProductNo = ?", (product_no,))
             self.connection.commit()
-            self.cursor.execute("SELECT ProductName FROM Products WHERE ProductNo = ?", (product_no,))
             self.logger.info(
-                f"Delete Product | {product_no} - {self.cursor.fetchone()[0]}", type="report", key="User Activities")
+                f"Delete Product | {product_no} - {name}", type="report", key="User Activities")
             return True
 
         except sqlite3.Error as err:
@@ -1683,4 +1684,4 @@ if __name__ == "__main__":
     #con.logger.info("Test Report Message 2", type="report", key="Traceability")
     #print(con.query_product_movement_report())
     # print(con.query_traceability_report("BATCH-240526-A", "Executive Office Chair"))
-    print(con.query_user_activities_report())
+    print(con.query_product_meter())

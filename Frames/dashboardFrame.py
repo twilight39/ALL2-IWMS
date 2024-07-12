@@ -264,6 +264,7 @@ class DashboardFrame(ttk.Frame):
         ttk.Label(right_frame, text="Active Products", font=self.font.get_font("thin3"), anchor=ttk.CENTER,
                   foreground=self.styleObj.colors.get("dark")).grid(row=0, column=0, sticky="we")
         parameters = self.db_connection.query_product_meter()
+        print(parameters)
         ttk.Meter(right_frame, amounttotal=parameters[0] if parameters[0] else 1, amountused=parameters[1],
                   bootstyle="success",
                   meterthickness=15, stripethickness=int(360 / int(parameters[0])) if parameters[0] else 1,

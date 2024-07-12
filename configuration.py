@@ -40,6 +40,7 @@ class Configuration:
         try:
             with open(self.config_file_path, "r") as f:
                 data = json.load(f)
+                print(data['user_preferences']['user_id'][str(employee_id)])
                 # print(json.load(f)["user_preferences"]["user_id"][str(employee_id)])
                 preferences = tuple([data["user_preferences"]["user_id"][str(employee_id)]["profile_picture"],
                                     data["user_preferences"]["user_id"][str(employee_id)]["theme_name"]])
@@ -48,6 +49,7 @@ class Configuration:
         except KeyError:
             self.writePreferences(str(employee_id))
             return self.getPreferences(employee_id)
+            pass
 
     def writePreferences(self, employee_id: str, profile_picture: str = "default", theme_name: str = "default"):
         with open(self.config_file_path, "r") as f:
@@ -105,9 +107,9 @@ class Configuration:
 
         except KeyError:
             if notification_id is None:
-                data["user_preferences"]["user_id"][str(employee_id)] = {"exclude_notifications": []}
+                data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"] = []
             else:
-                data["user_preferences"]["user_id"][str(employee_id)] = {"exclude_notifications": [notification_id]}
+                data["user_preferences"]["user_id"][str(employee_id)]["exclude_notifications"] = [notification_id]
 
         with open(self.config_file_path, "w") as f:
             json.dump(data, f, indent=4)
@@ -164,5 +166,6 @@ if __name__ == "__main__":
     #print(obj1.getPreferences('1'))
     # obj1.deletePreferences('1')
     # obj1.writeNotificationExclusions('-1', '5')
-    print(obj1.getReportsFile())
+    print(obj1.getPreferences('1'))
+    obj1.writeNotificationExclusions('1', "3")
 

@@ -74,7 +74,7 @@ class navigationFrame(ttk.Frame):
         userFrame = ttk.Frame(northFrame, bootstyle="warning")
         userName = ttk.Label(userFrame, text=self.name, font=self.Fonts.fonts["regular2"], bootstyle="warning-inverse",
                              foreground="black", anchor=ttk.CENTER)  # To query database
-        userID = ttk.Label(userFrame, text="Worker ID: " + str(self.employeeID), font=self.Fonts.fonts["regular2"],
+        userID = ttk.Label(userFrame, text=str(self.role), font=self.Fonts.fonts["regular2"],
                            bootstyle="warning-inverse", foreground="black", anchor=ttk.CENTER)  # To query database
 
         # Grid Frames

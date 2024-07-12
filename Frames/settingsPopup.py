@@ -52,8 +52,14 @@ class SettingsPopup(ttk.window.Toplevel):
         self.image_widgets = []
         self.image_cache = LRUCache(6)
 
+        # print(self.config.getNotificationExclusions('1'))
+
         # Application Images
         graphics_path = self.config.getGraphicsPath()
+        # print(self.config.getNotificationExclusions('1'))
+        # print(employeeID)
+        # print(self.config.getPreferences(str(1)))
+        # print(self.config.getNotificationExclusions('1'))
         self.image_paths = [
             f'{graphics_path}/User_Avatars/{self.config.getPreferences(str(self.employeeID))[0]}.png',
             f'{graphics_path}/User_Avatars/pfp_template.png',
@@ -63,6 +69,8 @@ class SettingsPopup(ttk.window.Toplevel):
         self.image_objects = []
         for im in self.image_paths:
             self.image_objects += [ImageTk.PhotoImage(image=Image.open(im))]
+
+        # print(self.config.getNotificationExclusions('1'))
 
         # Create Frames
         self.scrollable_frame = ScrolledFrame(self, bootstyle="rounded-secondary", padding=0)
